@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sendaway | Send Messages to Your Future Self</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        /* --- VARIABLES --- */
+        :root {
+            /* Pastels (No Purples) */
+            --bg-color: #FFFDF7;
+            /* Creamy White */
+            --card-bg: #FFFFFF;
+
+            --pastel-blue: #BAE6FD;
+            /* Sky Blue */
+            --pastel-pink: #FECDD3;
+            /* Soft Red */
+            --pastel-green: #BBF7D0;
+            /* Mint */
+            --pastel-yellow: #FDE68A;
+            /* Lemon */
+
+            --border-color: #000000;
+            --shadow-color: #000000;
+
+            --border-width: 3px;
+            --radius: 8px;
+        }
+
+        /* --- RESET & BASE --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--bg-color);
+            color: #000;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4 {
+            font-weight: 700;
+            margin-bottom: 0.5em;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            font-size: 1.05rem;
+        }
+
+        /* --- UTILS --- */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .section-spacer {
+            padding: 80px 0;
+        }
+
+        /* Hard Shadows & Borders Helper */
+        .neo-box {
+            background: var(--card-bg);
+            border: var(--border-width) solid var(--border-color);
+            border-radius: var(--radius);
+            box-shadow: 5px 5px 0px 0px var(--shadow-color);
+            transition: all 0.2s ease;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 16px 24px;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-align: center;
+            cursor: pointer;
+            border: var(--border-width) solid var(--border-color);
+            border-radius: var(--radius);
+            box-shadow: 4px 4px 0px 0px var(--shadow-color);
+            text-decoration: none;
+            transition: all 0.15s ease;
+            background-color: var(--pastel-green);
+            color: black;
+            text-transform: uppercase;
+        }
+
+        .btn:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px 0px var(--shadow-color);
+        }
+
+        .btn:active {
+            transform: translate(4px, 4px);
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background-color: var(--pastel-blue);
+        }
+
+        .btn-outline {
+            background-color: #fff;
+        }
+
+        /* --- HEADER / HERO --- */
+        header {
+            border-bottom: var(--border-width) solid var(--border-color);
+            background: #fff;
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 900;
+            border: 2px solid black;
+            padding: 5px 10px;
+            background: var(--pastel-yellow);
+            box-shadow: 3px 3px 0 black;
+        }
+
+        .hero {
+            padding: 60px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- MAIN FORM --- */
+        .capsule-form {
+            width: 100%;
+            max-width: 650px;
+            background: white;
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="date"],
+        textarea {
+            width: 100%;
+            padding: 15px;
+            font-family: inherit;
+            font-size: 1rem;
+            border: 2px solid black;
+            border-radius: var(--radius);
+            background: #FAFAFA;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        input:focus,
+        textarea:focus {
+            background: #fff;
+            box-shadow: 4px 4px 0px 0px var(--pastel-blue);
+        }
+
+        textarea {
+            min-height: 180px;
+            resize: vertical;
+        }
+
+        /* Custom File Upload */
+        .file-upload-area {
+            border: 2px dashed black;
+            border-radius: var(--radius);
+            background: #f9f9f9;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+        }
+
+        .file-upload-area:hover {
+            background: var(--pastel-blue);
+        }
+
+        .file-upload-area input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .icon-upload {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 10px;
+        }
+
+        /* Date Chips */
+        .chip-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .chip {
+            background: white;
+            border: 2px solid black;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+
+        .chip:hover {
+            background: var(--pastel-yellow);
+        }
+
+        .chip.active {
+            background: var(--pastel-pink);
+            box-shadow: 2px 2px 0 black;
+        }
+
+        /* --- EXPLAINER SECTION --- */
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .step-card {
+            background: white;
+            border: var(--border-width) solid black;
+            padding: 30px;
+            border-radius: var(--radius);
+            position: relative;
+        }
+
+        .step-number {
+            position: absolute;
+            top: -20px;
+            left: 20px;
+            background: var(--pastel-blue);
+            border: 2px solid black;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            border-radius: 50%;
+        }
+
+        /* --- PRICING --- */
+        .pricing-section {
+            background: var(--pastel-blue);
+            border-top: 3px solid black;
+            border-bottom: 3px solid black;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+
+        .price-card {
+            background: white;
+            border: 3px solid black;
+            border-radius: var(--radius);
+            box-shadow: 8px 8px 0px 0px rgba(0, 0, 0, 1);
+            padding: 40px;
+            text-align: left;
+            position: relative;
+        }
+
+        .price-card.featured {
+            background: #fff;
+        }
+
+        .price-card.featured::after {
+            content: "POPULAR";
+            position: absolute;
+            top: -15px;
+            right: 20px;
+            background: var(--pastel-pink);
+            border: 2px solid black;
+            padding: 5px 15px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            transform: rotate(3deg);
+        }
+
+        .price-tag {
+            font-size: 3rem;
+            font-weight: 800;
+            margin: 20px 0;
+            display: block;
+        }
+
+        .price-sub {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #555;
+        }
+
+        .feature-list {
+            list-style: none;
+            margin: 25px 0;
+        }
+
+        .feature-list li {
+            margin-bottom: 12px;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .feature-list li::before {
+            content: "";
+            width: 10px;
+            height: 10px;
+            background: black;
+            position: absolute;
+            left: 0;
+            top: 8px;
+        }
+
+        /* --- FAQ --- */
+        details {
+            background: white;
+            border: 2px solid black;
+            border-radius: var(--radius);
+            margin-bottom: 15px;
+            box-shadow: 4px 4px 0 #ddd;
+            transition: 0.2s;
+        }
+
+        details[open] {
+            box-shadow: 4px 4px 0 black;
+            background: var(--pastel-yellow);
+        }
+
+        summary {
+            padding: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        summary::-webkit-details-marker {
+            display: none;
+        }
+
+        summary::after {
+            content: "+";
+            font-size: 1.5rem;
+        }
+
+        details[open] summary::after {
+            content: "-";
+        }
+
+        .faq-content {
+            padding: 0 20px 20px 20px;
+            border-top: 2px solid black;
+            display: none;
+        }
+
+        details[open] .faq-content {
+            display: block;
+        }
+
+        /* --- MODAL --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border: 4px solid black;
+            border-radius: var(--radius);
+            box-shadow: 10px 10px 0px 0px black;
+            width: 100%;
+            max-width: 500px;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+        }
+
+        .modal h2 {
+            background: var(--pastel-pink);
+            display: inline-block;
+            padding: 5px 10px;
+            border: 2px solid black;
+            transform: rotate(-2deg);
+            margin-bottom: 20px;
+        }
+
+        /* --- ICONS SVG --- */
+        .icon {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            stroke-width: 0;
+            stroke: currentColor;
+            fill: currentColor;
+        }
+
+        /* Mobile Optimization */
+        @media (max-width: 600px) {
+            .capsule-form {
+                padding: 20px;
+                box-shadow: 4px 4px 0px 0px black;
+            }
+
+            .price-card {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="container nav-inner">
+            <div class="logo">SENDAWAY</div>
+            <a href="#create"
+                style="color: black; font-weight: 700; text-decoration: none; border-bottom: 2px solid black;">Start
+                Now</a>
+        </div>
+    </header>
+
+    <section class="hero" id="create">
+        <div class="container">
+            <div style="text-align: center; margin-bottom: 40px;">
+                <h1 style="font-size: 3rem; line-height: 1.1;">Write it now.<br>Read it later.</h1>
+                <p style="margin-top: 15px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                    Send a message to your future self. We lock it away in a secure time vault and deliver it exactly
+                    when you choose.
+                </p>
+            </div>
+
+            <form class="neo-box capsule-form" style="margin: 0 auto;" id="capsuleForm">
+                <div class="form-group">
+                    <label>Your Message</label>
+                    <textarea id="messageInput" maxlength="4000"
+                        placeholder="Dear Future Me, don't forget to..."></textarea>
+                    <div style="text-align: right; font-size: 0.8rem; margin-top: 5px; font-weight: 700;">
+                        <span id="charCount">0</span>/4000
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Video Message (Max 3 min)</label>
+                    <div class="file-upload-area" onclick="document.getElementById('videoInput').click()">
+                        <svg class="icon-upload" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z">
+                            </path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                        <div style="font-weight: 700;">Drop video or click to upload</div>
+                        <div style="font-size: 0.8rem; color: #555; margin-top: 5px;">WebM, MP4, MOV</div>
+                        <input type="file" id="videoInput" accept=".webm, .mp4, .mov">
+                    </div>
+                    <div id="fileName"
+                        style="margin-top: 10px; font-weight: 700; background: var(--pastel-blue); border: 2px solid black; padding: 5px; display: none;">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>When should we deliver?</label>
+                    <div class="chip-group">
+                        <div class="chip" data-months="3">3 Months</div>
+                        <div class="chip" data-months="6">6 Months</div>
+                        <div class="chip" data-months="12">1 Year</div>
+                        <div class="chip" data-months="60">5 Years</div>
+                    </div>
+                    <input type="date" id="dateInput">
+                </div>
+
+                <div class="form-group">
+                    <label>Delivery Email</label>
+                    <input type="email" id="emailInput" placeholder="you@example.com">
+                </div>
+
+                <button type="button" id="sendBtn" class="btn">Schedule Message</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Dashboard container (hidden by default) -->
+    <section id="messagesDashboard" class="section-spacer hidden">
+    </section>
+
+    <section id="howItWorks" class="section-spacer">
+        <div class="container">
+            <h2 style="text-align: center; font-size: 2.5rem; margin-bottom: 50px;">How it Works</h2>
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h3>Write</h3>
+                    <p>Type your message or record a video. Capture your current thoughts, dreams, or predictions.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h3>Schedule</h3>
+                    <p>Select a date. Next week? 10 years from now? We secure your message until that precise moment.
+                    </p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h3>Receive</h3>
+                    <p>When the date arrives, you get an email with a private link to view your time capsule.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="pricingSection" class="pricing-section section-spacer">
+        <div class="container">
+            <h2 style="text-align: center; margin-bottom: 50px;">Simple Pricing</h2>
+            <div class="pricing-grid">
+                <div class="price-card">
+                    <h3>Free</h3>
+                    <span class="price-tag">$0</span>
+                    <ul class="feature-list">
+                        <li>1 Text Message</li>
+                        <li>No Video Attachments</li>
+                        <li>No Storage</li>
+                        <li>Standard Delivery</li>
+                    </ul>
+                </div>
+
+                <div class="price-card featured">
+                    <h3>Pro Capsule</h3>
+                    <span class="price-tag">$9 <span class="price-sub">/ one-time</span></span>
+                    <ul class="feature-list">
+                        <li><strong>Unlimited</strong> Messages</li>
+                        <li><strong>Video</strong> Support (3 min)</li>
+                        <li>2GB Secure Storage</li>
+                        <li>Add more storage anytime</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="faqSection" class="section-spacer">
+        <div class="container" style="max-width: 700px;">
+            <h2 style="text-align: center; margin-bottom: 40px;">Questions?</h2>
+
+            <details>
+                <summary>Is my data secure?</summary>
+                <div class="faq-content">
+                    <p>Yes. All messages are encrypted at rest. No one can read them until the scheduled release date,
+                        not even us.</p>
+                </div>
+            </details>
+
+            <details>
+                <summary>Can I send video on the free plan?</summary>
+                <div class="faq-content">
+                    <p>The free plan is strictly text-only. To send video memories, you will need the Pro one-time
+                        upgrade.</p>
+                </div>
+            </details>
+
+            <details>
+                <summary>What if I change my email?</summary>
+                <div class="faq-content">
+                    <p>If you have a Pro account, you can log in to update your delivery settings. For free users,
+                        please contact support.</p>
+                </div>
+            </details>
+        </div>
+    </section>
+
+    <style>
+        .hidden {
+            display: none !important;
+        }
+    </style>
+
+    <footer style="text-align: center; padding: 40px; border-top: 3px solid black; background: white;">
+        <p style="font-weight: 700;">&copy; 2025 Sendaway</p>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+</body>
+
+</html>
