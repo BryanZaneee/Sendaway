@@ -19,8 +19,25 @@ function init(): void {
   // Check for success/cancel from Stripe redirect
   handleStripeRedirect();
 
-  console.log('Sendaway initialized');
+  console.log('FtrMsg initialized');
 }
+
+/**
+ * Initialize development tools (only in dev mode)
+ * Uncomment initDevTools() call in init() to enable
+ */
+// function initDevTools(): void {
+//   const isDev = window.location.hostname === 'localhost' ||
+//     window.location.hostname === '127.0.0.1' ||
+//     new URLSearchParams(window.location.search).has('dev');
+//
+//   if (isDev) {
+//     import('./components/dev-color-picker').then(({ devColorPicker }) => {
+//       devColorPicker.init();
+//       console.log('Dev color picker loaded (Ctrl+Shift+C to toggle)');
+//     });
+//   }
+// }
 
 /**
  * Update header UI based on auth state
@@ -73,13 +90,7 @@ function updateAuthUI(isLoggedIn: boolean, isPro: boolean): void {
     }, 0);
   }
 
-  // Find the "Start Now" link and insert auth button after it
-  const startNowLink = navInner.querySelector('a[href="#create"]');
-  if (startNowLink) {
-    startNowLink.after(authBtn);
-  } else {
-    navInner.appendChild(authBtn);
-  }
+  navInner.appendChild(authBtn);
 }
 
 /**
