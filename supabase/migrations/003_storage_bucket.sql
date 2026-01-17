@@ -1,4 +1,4 @@
--- Sendaway Storage Configuration
+-- FtrMsg Storage Configuration
 -- Create bucket for video messages
 
 -- ============================================

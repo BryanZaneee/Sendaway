@@ -56,9 +56,9 @@ function buildDeliveryEmail(
   }
 
   const messageText = message.message_text ?? '';
-  const appUrl = Deno.env.get('APP_URL') || 'https://sendaway.app';
+  const appUrl = Deno.env.get('APP_URL') || 'https://ftrmsg.app';
 
-  const subject = 'Your Sendaway message has arrived!';
+  const subject = 'Your FtrMsg message has arrived!';
 
   const html = `
 <!DOCTYPE html>
@@ -66,7 +66,7 @@ function buildDeliveryEmail(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your Sendaway Message</title>
+  <title>Your FtrMsg Message</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #FFFDF7; font-family: 'Helvetica Neue', Arial, sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #FFFDF7; padding: 40px 20px;">
@@ -77,7 +77,7 @@ function buildDeliveryEmail(
           <tr>
             <td style="background: #FDE68A; padding: 30px; border-bottom: 3px solid #000000; border-radius: 5px 5px 0 0;">
               <h1 style="margin: 0; font-size: 28px; font-weight: 800; color: #000000; text-transform: uppercase;">
-                SENDAWAY
+                FTRMSG
               </h1>
               <p style="margin: 10px 0 0 0; font-size: 16px; color: #333333;">
                 Your message from the past has arrived!
@@ -107,7 +107,7 @@ function buildDeliveryEmail(
           <tr>
             <td style="background: #F5F5F5; padding: 20px 30px; border-top: 2px solid #000000; border-radius: 0 0 5px 5px;">
               <p style="margin: 0; font-size: 14px; color: #555555; text-align: center;">
-                Sent with love from your past self via <a href="${appUrl}" style="color: #000000; font-weight: 700;">Sendaway</a>
+                Sent with love from your past self via <a href="${appUrl}" style="color: #000000; font-weight: 700;">FtrMsg</a>
               </p>
             </td>
           </tr>
@@ -347,7 +347,7 @@ async function processMessageBatch(
     stoppedEarly: false,
   };
 
-  const fromEmail = Deno.env.get('FROM_EMAIL') || 'Sendaway <noreply@sendaway.app>';
+  const fromEmail = Deno.env.get('FROM_EMAIL') || 'FtrMsg <noreply@ftrmsg.app>';
 
   for (let i = 0; i < messages.length; i++) {
     if (Date.now() - startTime > TIMEOUT_MS) {

@@ -1,6 +1,6 @@
 # Services
 
-Singleton service layer for Sendaway frontend. All services maintain global state and provide consistent APIs across components.
+Singleton service layer for FtrMsg frontend. All services maintain global state and provide consistent APIs across components.
 
 ## Architecture
 

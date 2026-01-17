@@ -1,4 +1,4 @@
--- Sendaway Database Schema
+-- FtrMsg Database Schema
 -- Initial migration: Create tables, functions, and storage
 
 -- ============================================

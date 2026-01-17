@@ -180,7 +180,7 @@ class PlanModal {
     const result = await messageService.createMessage(this.data.messageData);
 
     if (result.success) {
-      toast.success('Your Sendaway message has been scheduled!');
+      toast.success('Your FtrMsg message has been scheduled!');
       this.hide();
       this.data.onSuccess();
     } else {

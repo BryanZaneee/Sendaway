@@ -1,10 +1,10 @@
-# Sendaway
+# FtrMsg
 
 Time-locked message delivery platform. Users compose messages (text + optional video) with a future delivery date. Messages are locked until their scheduled date, then delivered via email with access to unlocked content.
 
 ## Architecture
 
-Sendaway is a single-page application (Vite + Vanilla TypeScript) backed by Supabase (PostgreSQL + Auth + Storage + Edge Functions).
+FtrMsg is a single-page application (Vite + Vanilla TypeScript) backed by Supabase (PostgreSQL + Auth + Storage + Edge Functions).
 
 ```
 ┌─────────────────────────────────────────────────────────────┐

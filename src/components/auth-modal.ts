@@ -68,7 +68,7 @@ class AuthModal {
         <p style="margin-bottom: 25px; color: #555;">
           ${this.mode === 'reset'
             ? "Enter your email and we'll send you a reset link."
-            : 'Sign in to send your Sendaway message.'
+            : 'Sign in to send your FtrMsg message.'
           }
         </p>
 

@@ -1,7 +1,7 @@
 import { supabase } from '../config/supabase';
 import { authService } from './auth.service';
 
-export type ProductType = 'pro_upgrade' | 'storage_addon';
+export type ProductType = 'pro_upgrade';
 
 export interface CheckoutResult {
   success: boolean;
@@ -10,20 +10,6 @@ export interface CheckoutResult {
 }
 
 class PaymentService {
-  /**
-   * Create a Stripe checkout session for Pro upgrade
-   */
-  async createProCheckout(): Promise<CheckoutResult> {
-    return this.createCheckout('pro_upgrade');
-  }
-
-  /**
-   * Create a Stripe checkout session for storage addon
-   */
-  async createStorageCheckout(): Promise<CheckoutResult> {
-    return this.createCheckout('storage_addon');
-  }
-
   /**
    * Create a Stripe checkout session
    */

@@ -130,55 +130,6 @@ class MessageService {
   }
 
   /**
-   * Get all messages for current user
-   */
-  async getMyMessages(): Promise<Message[]> {
-    const user = authService.getUser();
-
-    if (!user) {
-      return [];
-    }
-
-    const { data, error } = await supabase
-      .from('messages')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching messages:', error);
-      return [];
-    }
-
-    return data || [];
-  }
-
-  /**
-   * Get pending messages for current user
-   */
-  async getPendingMessages(): Promise<Message[]> {
-    const user = authService.getUser();
-
-    if (!user) {
-      return [];
-    }
-
-    const { data, error } = await supabase
-      .from('messages')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('status', 'pending')
-      .order('scheduled_date', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching pending messages:', error);
-      return [];
-    }
-
-    return data || [];
-  }
-
-  /**
    * Cancel a pending message
    */
   async cancelMessage(messageId: string): Promise<{ success: boolean; error?: string }> {

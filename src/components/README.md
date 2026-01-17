@@ -1,6 +1,6 @@
 # Components
 
-Vanilla TypeScript components for the Sendaway single-page application.
+Vanilla TypeScript components for the FtrMsg single-page application.
 
 ## Architecture
 

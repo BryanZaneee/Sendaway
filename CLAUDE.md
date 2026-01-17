@@ -1,4 +1,4 @@
-# Sendaway Repository Index
+# FtrMsg Repository Index
 
 | Path | What | When |
 |------|------|------|

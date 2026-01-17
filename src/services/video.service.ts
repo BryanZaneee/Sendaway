@@ -64,33 +64,6 @@ class VideoService {
   }
 
   /**
-   * Delete a video from storage
-   */
-  async deleteVideo(path: string): Promise<{ success: boolean; error?: string }> {
-    const user = authService.getUser();
-
-    if (!user) {
-      return { success: false, error: 'You must be logged in' };
-    }
-
-    // Ensure user owns this file (path should start with their user id)
-    if (!path.startsWith(`${user.id}/`)) {
-      return { success: false, error: 'Unauthorized' };
-    }
-
-    const { error } = await supabase.storage
-      .from('message-videos')
-      .remove([path]);
-
-    if (error) {
-      console.error('Delete error:', error);
-      return { success: false, error: 'Failed to delete video' };
-    }
-
-    return { success: true };
-  }
-
-  /**
    * Get a signed URL for viewing a video (used for delivered messages)
    */
   async getSignedUrl(path: string, expiresIn: number = 3600): Promise<string | null> {

@@ -65,7 +65,7 @@ serve(async (req: Request) => {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: 'Sendaway Pro',
+              name: 'FtrMsg Pro',
               description: 'Unlimited messages, video support, 2GB storage',
             },
             unit_amount: 900,

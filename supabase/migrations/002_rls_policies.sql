@@ -1,4 +1,4 @@
--- Sendaway Row Level Security Policies
+-- FtrMsg Row Level Security Policies
 -- Ensures users can only access their own data
 
 -- ============================================
