@@ -18,7 +18,27 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { productType, userId } = await req.json();
+    // Validate Content-Type header
+    const contentType = req.headers.get('content-type');
+    if (!contentType?.includes('application/json')) {
+      return new Response(
+        JSON.stringify({ error: 'Content-Type must be application/json' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    let productType: string;
+    let userId: string;
+    try {
+      const body = await req.json();
+      productType = body.productType;
+      userId = body.userId;
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!productType || !userId) {
       return new Response(
@@ -56,7 +76,7 @@ serve(async (req: Request) => {
       );
     }
 
-    const appUrl = Deno.env.get('APP_URL') || 'http://localhost:5173';
+    const appUrl = Deno.env.get('APP_URL') || 'https://ftrmsg.com';
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],

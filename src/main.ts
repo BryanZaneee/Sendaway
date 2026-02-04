@@ -66,31 +66,30 @@ function updateAuthUI(isLoggedIn: boolean, isPro: boolean): void {
         Sign Out
       </button>
     `;
-
-    // Add sign out handler after insertion
-    setTimeout(() => {
-      document.getElementById('signOutBtn')?.addEventListener('click', async () => {
-        await authService.signOut();
-        toast.info('Signed out');
-      });
-    }, 0);
   } else {
     authBtn.innerHTML = `
       <button id="signInBtn" style="background: none; border: none; font-family: inherit; font-weight: 700; cursor: pointer; border-bottom: 2px solid black;">
         Sign In
       </button>
     `;
-
-    setTimeout(() => {
-      document.getElementById('signInBtn')?.addEventListener('click', () => {
-        import('./components/auth-modal').then(({ authModal }) => {
-          authModal.show();
-        });
-      });
-    }, 0);
   }
 
   navInner.appendChild(authBtn);
+
+  // Attach listeners after DOM insertion to ensure elements exist
+  const signOutBtn = document.getElementById('signOutBtn');
+  const signInBtn = document.getElementById('signInBtn');
+
+  signOutBtn?.addEventListener('click', async () => {
+    await authService.signOut();
+    toast.info('Signed out');
+  });
+
+  signInBtn?.addEventListener('click', () => {
+    import('./components/auth-modal').then(({ authModal }) => {
+      authModal.show();
+    });
+  });
 }
 
 /**

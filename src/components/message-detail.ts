@@ -12,6 +12,13 @@ class MessageDetailModal {
   // Persists across hide/show calls; cleared only on app reload
   private signedUrl: string | null = null;
   private urlExpiresAt: Date | null = null;
+  // Cached countdown DOM elements to avoid repeated queries
+  private countdownElements: {
+    days: HTMLElement | null;
+    hours: HTMLElement | null;
+    minutes: HTMLElement | null;
+    seconds: HTMLElement | null;
+  } | null = null;
 
   /**
    * Displays message detail modal (locked or unlocked view based on message state).
@@ -33,6 +40,7 @@ class MessageDetailModal {
    */
   hide(): void {
     this.stopCountdown();
+    this.countdownElements = null;
 
     if (this.overlay) {
       this.overlay.remove();
@@ -75,15 +83,21 @@ class MessageDetailModal {
 
     const countdown = calculateCountdown(scheduledDate);
 
-    const daysEl = this.overlay.querySelector('#countdown-days');
-    const hoursEl = this.overlay.querySelector('#countdown-hours');
-    const minutesEl = this.overlay.querySelector('#countdown-minutes');
-    const secondsEl = this.overlay.querySelector('#countdown-seconds');
+    // Cache DOM elements on first call to avoid repeated queries
+    if (!this.countdownElements) {
+      this.countdownElements = {
+        days: this.overlay.querySelector('#countdown-days'),
+        hours: this.overlay.querySelector('#countdown-hours'),
+        minutes: this.overlay.querySelector('#countdown-minutes'),
+        seconds: this.overlay.querySelector('#countdown-seconds'),
+      };
+    }
 
-    if (daysEl) daysEl.textContent = countdown.days.toString();
-    if (hoursEl) hoursEl.textContent = countdown.hours.toString();
-    if (minutesEl) minutesEl.textContent = countdown.minutes.toString();
-    if (secondsEl) secondsEl.textContent = countdown.seconds.toString();
+    const { days, hours, minutes, seconds } = this.countdownElements;
+    if (days) days.textContent = countdown.days.toString();
+    if (hours) hours.textContent = countdown.hours.toString();
+    if (minutes) minutes.textContent = countdown.minutes.toString();
+    if (seconds) seconds.textContent = countdown.seconds.toString();
   }
 
   /**
@@ -424,10 +438,12 @@ class MessageDetailModal {
             this.urlExpiresAt = new Date(Date.now() + 604800 * 1000);
           } else {
             videoError = true;
+            toast.error('Unable to load video. Please try again later.');
           }
         } catch (error) {
           console.error('Failed to get signed URL:', error);
           videoError = true;
+          toast.error('Unable to load video. Please try again later.');
         }
       }
     }

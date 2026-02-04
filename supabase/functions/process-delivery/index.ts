@@ -36,10 +36,15 @@ interface BatchResult {
 }
 
 /**
- * Returns true if email contains '@' symbol
+ * Validates email format using a reasonable pattern.
+ * Checks for: non-empty local part, @, domain with at least one dot, valid TLD.
  */
 function validateEmail(email: string): boolean {
-  return email?.includes('@') ?? false;
+  if (!email) return false;
+  // Pattern: local@domain.tld where local and domain parts are non-empty
+  // and TLD is 2-10 characters (covers most valid TLDs)
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,10}$/;
+  return emailPattern.test(email);
 }
 
 /**
@@ -56,7 +61,7 @@ function buildDeliveryEmail(
   }
 
   const messageText = message.message_text ?? '';
-  const appUrl = Deno.env.get('APP_URL') || 'https://ftrmsg.app';
+  const appUrl = Deno.env.get('APP_URL') || 'https://ftrmsg.com';
 
   const subject = 'Your FtrMsg message has arrived!';
 
@@ -347,7 +352,7 @@ async function processMessageBatch(
     stoppedEarly: false,
   };
 
-  const fromEmail = Deno.env.get('FROM_EMAIL') || 'FtrMsg <noreply@ftrmsg.app>';
+  const fromEmail = Deno.env.get('FROM_EMAIL') || 'FtrMsg <noreply@ftrmsg.com>';
 
   for (let i = 0; i < messages.length; i++) {
     if (Date.now() - startTime > TIMEOUT_MS) {

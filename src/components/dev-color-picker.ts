@@ -27,6 +27,9 @@ class DevColorPicker {
   private container: HTMLElement | null = null;
   private isCollapsed: boolean = false;
   private currentColors: Map<string, string> = new Map();
+  private dragMoveHandler: ((e: MouseEvent) => void) | null = null;
+  private dragEndHandler: (() => void) | null = null;
+  private keyboardHandler: ((e: KeyboardEvent) => void) | null = null;
 
   init(): void {
     this.loadFromStorage();
@@ -442,13 +445,14 @@ class DevColorPicker {
   }
 
   private setupKeyboardShortcut(): void {
-    document.addEventListener('keydown', (e) => {
+    this.keyboardHandler = (e: KeyboardEvent) => {
       // Ctrl+Shift+C
       if (e.ctrlKey && e.shiftKey && e.key === 'C') {
         e.preventDefault();
         this.toggle();
       }
-    });
+    };
+    document.addEventListener('keydown', this.keyboardHandler);
   }
 
   private makeDraggable(): void {
@@ -467,7 +471,7 @@ class DevColorPicker {
       header.style.cursor = 'grabbing';
     });
 
-    document.addEventListener('mousemove', (e) => {
+    this.dragMoveHandler = (e: MouseEvent) => {
       if (!isDragging || !this.container) return;
 
       const x = e.clientX - offsetX;
@@ -481,12 +485,39 @@ class DevColorPicker {
       this.container.style.top = `${Math.max(0, Math.min(y, maxY))}px`;
       this.container.style.right = 'auto';
       this.container.style.bottom = 'auto';
-    });
+    };
 
-    document.addEventListener('mouseup', () => {
+    this.dragEndHandler = () => {
       isDragging = false;
       header.style.cursor = 'move';
-    });
+    };
+
+    document.addEventListener('mousemove', this.dragMoveHandler);
+    document.addEventListener('mouseup', this.dragEndHandler);
+  }
+
+  /**
+   * Cleanup event listeners when component is destroyed
+   */
+  destroy(): void {
+    if (this.dragMoveHandler) {
+      document.removeEventListener('mousemove', this.dragMoveHandler);
+      this.dragMoveHandler = null;
+    }
+    if (this.dragEndHandler) {
+      document.removeEventListener('mouseup', this.dragEndHandler);
+      this.dragEndHandler = null;
+    }
+    if (this.keyboardHandler) {
+      document.removeEventListener('keydown', this.keyboardHandler);
+      this.keyboardHandler = null;
+    }
+    if (this.container) {
+      this.container.remove();
+      this.container = null;
+    }
+    const styleEl = document.getElementById('dev-color-picker-styles');
+    styleEl?.remove();
   }
 }
 

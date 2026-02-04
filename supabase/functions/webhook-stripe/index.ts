@@ -72,6 +72,20 @@ serve(async (req: Request) => {
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
+    if (existingPayment.status === 'failed') {
+      // Previously failed payment is being retried by Stripe.
+      // Reset status to pending before attempting tier upgrade again.
+      console.log('Retrying previously failed payment:', checkoutSessionId);
+      await supabaseAdmin
+        .from('payments')
+        .update({
+          status: 'pending',
+          error_message: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('stripe_checkout_session_id', checkoutSessionId);
+    }
+    // For 'pending' status, continue to tier upgrade (idempotent retry)
   } else {
     const { error: insertError } = await supabaseAdmin
       .from('payments')
