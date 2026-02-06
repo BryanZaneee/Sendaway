@@ -2,6 +2,7 @@ import { authService } from './services/auth.service';
 import { formHandler } from './components/form-handler';
 import { messagesDashboard } from './components/messages-dashboard';
 import { toast } from './components/toast';
+import { initScrollAnimations } from './utils/scroll-animations';
 
 // Initialize the application
 function init(): void {
@@ -19,7 +20,115 @@ function init(): void {
   // Check for success/cancel from Stripe redirect
   handleStripeRedirect();
 
+  // Set up scroll animations
+  setupAnimations();
+
   console.log('FtrMsg initialized');
+}
+
+/**
+ * Attach animation classes to page elements and initialize scroll observer
+ */
+function setupAnimations(): void {
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Hero headline — split into staggered lines
+  const heroHeading = document.querySelector('.hero h1');
+  if (heroHeading) {
+    const lines = heroHeading.innerHTML.split('<br>');
+    heroHeading.innerHTML = lines
+      .map(
+        (line, i) =>
+          `<div style="opacity:0" class="animate-hero-text stagger-${i + 1}">${line}</div>`
+      )
+      .join('');
+  }
+
+  // Hero form — bounce entrance after short delay
+  const form = document.querySelector('.capsule-form') as HTMLElement | null;
+  if (form && !prefersReducedMotion) {
+    form.style.opacity = '0';
+    setTimeout(() => {
+      form.classList.add('animate-form');
+    }, 300);
+  }
+
+  // How It Works section heading
+  const howHeading = document.querySelector('#howItWorks h2');
+  if (howHeading) {
+    howHeading.classList.add('animate-on-scroll');
+    howHeading.setAttribute('data-animation', 'slide-left');
+  }
+
+  // Step cards — staggered card entrance
+  document.querySelectorAll('.step-card').forEach((card, i) => {
+    card.classList.add('animate-on-scroll', `stagger-${i + 1}`);
+    card.setAttribute('data-animation', 'card');
+  });
+
+  // Step number circles — pop with spin
+  document.querySelectorAll('.step-number').forEach((num) => {
+    num.classList.add('animate-on-scroll');
+    num.setAttribute('data-animation', 'number-pop');
+  });
+
+  // Message Demo section
+  const demoHeading = document.querySelector('#messageDemoSection h2');
+  if (demoHeading) {
+    demoHeading.classList.add('animate-on-scroll');
+    demoHeading.setAttribute('data-animation', 'slide-right');
+  }
+
+  const demoCard = document.querySelector('.demo-message-card');
+  if (demoCard) {
+    demoCard.classList.add('animate-on-scroll');
+    demoCard.setAttribute('data-animation', 'card');
+  }
+
+  // Trust section heading + cards
+  const trustHeading = document.querySelector('#trustSection h2');
+  if (trustHeading) {
+    trustHeading.classList.add('animate-on-scroll');
+    trustHeading.setAttribute('data-animation', 'slide-left');
+  }
+
+  document.querySelectorAll('.trust-card').forEach((card, i) => {
+    card.classList.add('animate-on-scroll', `stagger-${i + 1}`);
+    card.setAttribute('data-animation', 'card');
+  });
+
+  // Pricing section heading + cards
+  const pricingHeading = document.querySelector('#pricingSection h2');
+  if (pricingHeading) {
+    pricingHeading.classList.add('animate-on-scroll');
+    pricingHeading.setAttribute('data-animation', 'slide-right');
+  }
+
+  document.querySelectorAll('.price-card').forEach((card, i) => {
+    card.classList.add('animate-on-scroll', `stagger-${i + 1}`);
+    card.setAttribute('data-animation', 'card');
+  });
+
+  // FAQ heading + details
+  const faqHeading = document.querySelector('#faqSection h2');
+  if (faqHeading) {
+    faqHeading.classList.add('animate-on-scroll');
+    faqHeading.setAttribute('data-animation', 'slide-left');
+  }
+
+  document.querySelectorAll('#faqSection details').forEach((detail, i) => {
+    detail.classList.add('animate-on-scroll', `stagger-${i + 1}`);
+    detail.setAttribute('data-animation', 'slide-left');
+  });
+
+  // Social proof counter
+  const counterEl = document.querySelector('[data-counter]') as HTMLElement | null;
+  if (counterEl) {
+    counterEl.classList.add('animate-on-scroll');
+  }
+
+  // Initialize the observer
+  initScrollAnimations();
 }
 
 /**

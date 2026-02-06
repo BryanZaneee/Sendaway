@@ -37,6 +37,8 @@ class MessagesDashboard {
     this.hasMore = true;
 
     document.getElementById('howItWorks')?.classList.add('hidden');
+    document.getElementById('messageDemoSection')?.classList.add('hidden');
+    document.getElementById('trustSection')?.classList.add('hidden');
     document.getElementById('pricingSection')?.classList.add('hidden');
     document.getElementById('faqSection')?.classList.add('hidden');
 
@@ -53,6 +55,8 @@ class MessagesDashboard {
    */
   hide(): void {
     document.getElementById('howItWorks')?.classList.remove('hidden');
+    document.getElementById('messageDemoSection')?.classList.remove('hidden');
+    document.getElementById('trustSection')?.classList.remove('hidden');
     document.getElementById('pricingSection')?.classList.remove('hidden');
     document.getElementById('faqSection')?.classList.remove('hidden');
 
