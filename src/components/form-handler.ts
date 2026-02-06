@@ -16,6 +16,7 @@ interface FormElements {
   emailInput: HTMLInputElement;
   sendBtn: HTMLButtonElement;
   chips: NodeListOf<HTMLElement>;
+  calendarChip: HTMLElement;
 }
 
 class FormHandler {
@@ -39,7 +40,8 @@ class FormHandler {
       dateInput: document.getElementById('dateInput') as HTMLInputElement,
       emailInput: document.getElementById('emailInput') as HTMLInputElement,
       sendBtn: document.getElementById('sendBtn') as HTMLButtonElement,
-      chips: document.querySelectorAll('.chip') as NodeListOf<HTMLElement>
+      chips: document.querySelectorAll('.chip[data-months]') as NodeListOf<HTMLElement>,
+      calendarChip: document.getElementById('calendarChip') as HTMLElement
     };
 
     if (!this.elements.form) {
@@ -70,6 +72,9 @@ class FormHandler {
       });
     });
 
+    // Calendar chip toggle
+    el.calendarChip.addEventListener('click', () => this.toggleCalendarInput());
+
     // Also handle inline onclick (from original HTML)
     (window as unknown as { setPresetDate: (months: number, btn: HTMLElement) => void }).setPresetDate =
       (months: number, btn: HTMLElement) => this.setPresetDate(months, btn);
@@ -95,14 +100,56 @@ class FormHandler {
     });
   }
 
+  private toggleCalendarInput(): void {
+    if (!this.elements) return;
+    const el = this.elements;
+    const isVisible = el.dateInput.style.display !== 'none';
+
+    if (isVisible) {
+      // Hide date input, deactivate calendar chip
+      el.dateInput.style.display = 'none';
+      el.calendarChip.classList.remove('active');
+    } else {
+      // Show date input, activate calendar chip, deactivate preset chips
+      el.dateInput.style.display = '';
+      el.calendarChip.classList.add('active');
+      el.chips.forEach(c => {
+        c.classList.remove('active');
+        const dateEl = c.querySelector('.chip-date');
+        if (dateEl) dateEl.textContent = '';
+      });
+      el.dateInput.value = '';
+      el.dateInput.focus();
+    }
+  }
+
   private setPresetDate(months: number, btn: HTMLElement): void {
     if (!this.elements) return;
 
-    this.elements.dateInput.value = getDateMonthsFromNow(months);
+    // Hide date input and deactivate calendar chip
+    this.elements.dateInput.style.display = 'none';
+    this.elements.calendarChip.classList.remove('active');
+
+    const dateStr = getDateMonthsFromNow(months);
+    this.elements.dateInput.value = dateStr;
 
     // Update chip UI
-    this.elements.chips.forEach(c => c.classList.remove('active'));
+    this.elements.chips.forEach(c => {
+      c.classList.remove('active');
+      const dateEl = c.querySelector('.chip-date');
+      if (dateEl) dateEl.textContent = '';
+    });
     btn.classList.add('active');
+
+    // Show formatted date in the selected chip
+    const dateEl = btn.querySelector('.chip-date');
+    if (dateEl) {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const date = new Date(y, m - 1, d);
+      dateEl.textContent = date.toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric'
+      });
+    }
   }
 
   private async handleVideoSelect(e: Event): Promise<void> {
@@ -191,6 +238,10 @@ class FormHandler {
         el.messageInput.style.borderColor = 'red';
       }
       if (validation.errors.date) {
+        if (el.dateInput.style.display === 'none') {
+          el.dateInput.style.display = '';
+          el.calendarChip.classList.add('active');
+        }
         el.dateInput.style.borderColor = 'red';
       }
       if (validation.errors.email) {
@@ -240,7 +291,13 @@ class FormHandler {
     el.form.reset();
     el.charCount.textContent = '0';
     el.fileNameDisplay.style.display = 'none';
-    el.chips.forEach(c => c.classList.remove('active'));
+    el.chips.forEach(c => {
+      c.classList.remove('active');
+      const dateEl = c.querySelector('.chip-date');
+      if (dateEl) dateEl.textContent = '';
+    });
+    el.calendarChip.classList.remove('active');
+    el.dateInput.style.display = 'none';
     this.uploadedVideo = null;
 
     // Re-prefill email if logged in
