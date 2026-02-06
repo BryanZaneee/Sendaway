@@ -7,7 +7,7 @@ export interface FormValidationResult {
   };
 }
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,10}$/;
 const MAX_MESSAGE_LENGTH = 4000;
 
 /**

@@ -1,6 +1,7 @@
 import { supabase } from '../config/supabase';
 import { authService } from './auth.service';
-import { validateVideo, formatBytes, formatDuration } from '../utils/video-duration';
+import { validateVideo, formatBytes } from '../utils/video-duration';
+import { VIDEO_SIGNED_URL_EXPIRY_SECONDS } from '../config/constants';
 
 export interface UploadResult {
   success: boolean;
@@ -66,7 +67,7 @@ class VideoService {
   /**
    * Get a signed URL for viewing a video (used for delivered messages)
    */
-  async getSignedUrl(path: string, expiresIn: number = 3600): Promise<string | null> {
+  async getSignedUrl(path: string, expiresIn: number = VIDEO_SIGNED_URL_EXPIRY_SECONDS): Promise<string | null> {
     const { data, error } = await supabase.storage
       .from('message-videos')
       .createSignedUrl(path, expiresIn);
@@ -104,6 +105,3 @@ class VideoService {
 }
 
 export const videoService = new VideoService();
-
-// Re-export utility functions for convenience
-export { formatBytes, formatDuration };

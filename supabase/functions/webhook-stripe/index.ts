@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
 import Stripe from 'https://esm.sh/stripe@14.10.0?target=deno';
 import { getSupabaseAdmin } from '../_shared/supabase-admin.ts';
+import { PRO_UPGRADE_PRICE_CENTS, STORAGE_LIMIT_PRO_BYTES } from '../_shared/constants.ts';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   apiVersion: '2023-10-16',
@@ -93,7 +94,7 @@ serve(async (req: Request) => {
         user_id: userId,
         stripe_payment_intent_id: paymentIntentId,
         stripe_checkout_session_id: checkoutSessionId,
-        amount_cents: 900,
+        amount_cents: PRO_UPGRADE_PRICE_CENTS,
         currency: 'usd',
         product_type: 'pro_upgrade',
         status: 'pending',
@@ -112,7 +113,7 @@ serve(async (req: Request) => {
     .from('profiles')
     .update({
       tier: 'pro',
-      storage_limit_bytes: 2147483648,
+      storage_limit_bytes: STORAGE_LIMIT_PRO_BYTES,
     })
     .eq('id', userId);
 

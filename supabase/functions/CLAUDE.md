@@ -11,5 +11,6 @@
 
 | Module | What | When |
 |--------|------|------|
+| _shared/constants.ts | Shared constants (pricing, storage limits, batch config, URL expiry, log retention) | All edge functions import from here instead of hardcoding values |
 | _shared/cron-auth.ts | Verifies CRON_SECRET header matches environment variable | Guards process-delivery and cleanup-logs from unauthorized invocation |
 | _shared/supabase-admin.ts | Creates Supabase admin client with service role key | Edge Functions need admin privileges for RLS-protected operations |

@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
 import { verifyCronSecret } from '../_shared/cron-auth.ts';
 import { getSupabaseAdmin } from '../_shared/supabase-admin.ts';
+import { LOG_RETENTION_DAYS } from '../_shared/constants.ts';
 
 serve(async (req: Request) => {
   if (!verifyCronSecret(req)) {
@@ -14,7 +15,7 @@ serve(async (req: Request) => {
 
   try {
     const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - 90);
+    cutoffDate.setDate(cutoffDate.getDate() - LOG_RETENTION_DAYS);
 
     const { count, error } = await supabaseAdmin
       .from('delivery_logs')

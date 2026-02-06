@@ -3,6 +3,13 @@ import { toast } from './toast';
 
 type AuthMode = 'signin' | 'signup' | 'reset';
 
+const GOOGLE_SVG = `<svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+  <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+  <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/>
+  <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+</svg>`;
+
 class AuthModal {
   private overlay: HTMLElement | null = null;
   private mode: AuthMode = 'signin';
@@ -13,7 +20,7 @@ class AuthModal {
    */
   show(onSuccess?: () => void): void {
     this.onSuccessCallback = onSuccess || null;
-    this.mode = 'signin';
+    this.mode = 'signup';
     this.render();
   }
 
@@ -52,13 +59,13 @@ class AuthModal {
   private getModalHTML(): string {
     const titles: Record<AuthMode, string> = {
       signin: 'Welcome Back',
-      signup: 'Create Account',
+      signup: 'Sign Up',
       reset: 'Reset Password'
     };
 
     const buttonTexts: Record<AuthMode, string> = {
       signin: 'Sign In',
-      signup: 'Create Account',
+      signup: 'Sign Up',
       reset: 'Send Reset Link'
     };
 
@@ -68,6 +75,8 @@ class AuthModal {
         <p style="margin-bottom: 25px; color: #555;">
           ${this.mode === 'reset'
             ? "Enter your email and we'll send you a reset link."
+            : this.mode === 'signup'
+            ? 'Sign up to send your FtrMsg.'
             : 'Sign in to send your FtrMsg message.'
           }
         </p>
@@ -90,12 +99,24 @@ class AuthModal {
           </button>
         </form>
 
+        ${this.mode !== 'reset' ? `
+          <div style="display: flex; align-items: center; margin: 20px 0; gap: 15px;">
+            <div style="flex: 1; height: 1px; background: #ddd;"></div>
+            <span style="color: #888; font-size: 0.85rem;">or</span>
+            <div style="flex: 1; height: 1px; background: #ddd;"></div>
+          </div>
+
+          <button id="googleSignIn" type="button" class="btn" style="background: white; color: black; display: flex; align-items: center; justify-content: center; gap: 10px;">
+            ${GOOGLE_SVG}
+            Continue with Google
+          </button>
+        ` : ''}
+
         <div style="margin-top: 20px; font-size: 0.9rem;">
           ${this.getFooterLinks()}
         </div>
 
-        <button
-          onclick="document.getElementById('authModal').querySelector('.modal-overlay')?.click()"
+        <button id="closeAuthModal"
           style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.5rem; cursor: pointer;"
         >&times;</button>
       </div>
@@ -128,6 +149,11 @@ class AuthModal {
     const emailInput = document.getElementById('authEmail') as HTMLInputElement;
     const passwordInput = document.getElementById('authPassword') as HTMLInputElement | null;
 
+    // Close button
+    document.getElementById('closeAuthModal')?.addEventListener('click', () => {
+      this.hide();
+    });
+
     // Mode switching
     document.getElementById('switchToSignup')?.addEventListener('click', (e) => {
       e.preventDefault();
@@ -145,6 +171,24 @@ class AuthModal {
       e.preventDefault();
       this.mode = 'reset';
       this.render();
+    });
+
+    // Google OAuth
+    document.getElementById('googleSignIn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('googleSignIn') as HTMLButtonElement;
+      btn.disabled = true;
+      btn.textContent = 'Redirecting...';
+
+      const result = await authService.signInWithGoogle();
+      if (result.error) {
+        toast.error(result.error);
+        btn.disabled = false;
+        btn.innerHTML = `
+          ${GOOGLE_SVG}
+          Continue with Google
+        `;
+      }
+      // On success, OAuth will redirect - no further action needed
     });
 
     // Form submission

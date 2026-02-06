@@ -3,6 +3,7 @@ import { videoService } from '../services/video.service';
 import { toast } from './toast';
 import { calculateCountdown, formatDate } from '../utils/countdown';
 import { isMessageUnlocked } from '../utils/message-status';
+import { VIDEO_SIGNED_URL_EXPIRY_SECONDS } from '../config/constants';
 import type { Message } from '../types/database';
 
 class MessageDetailModal {
@@ -156,6 +157,19 @@ class MessageDetailModal {
    */
   private getSharedStyles(): string {
     return `
+      .message-detail-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        overflow-y: auto;
+      }
       .back-btn {
         position: absolute;
         top: 20px;
@@ -228,19 +242,6 @@ class MessageDetailModal {
     this.overlay = this.createOverlayBase('#BAE6FD');
     this.overlay.innerHTML = `
       <style>
-        .message-detail-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          z-index: 1000;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 20px;
-          overflow-y: auto;
-        }
         ${this.getSharedStyles()}
         .detail-header {
           background: #FDE68A;
@@ -429,13 +430,10 @@ class MessageDetailModal {
     if (this.message.video_storage_path) {
       if (this.isUrlExpired()) {
         try {
-          const url = await videoService.getSignedUrl(
-            this.message.video_storage_path,
-            604800 // 7 days in seconds
-          );
+          const url = await videoService.getSignedUrl(this.message.video_storage_path);
           if (url) {
             this.signedUrl = url;
-            this.urlExpiresAt = new Date(Date.now() + 604800 * 1000);
+            this.urlExpiresAt = new Date(Date.now() + VIDEO_SIGNED_URL_EXPIRY_SECONDS * 1000);
           } else {
             videoError = true;
             toast.error('Unable to load video. Please try again later.');
@@ -451,19 +449,6 @@ class MessageDetailModal {
     this.overlay = this.createOverlayBase('#BBF7D0');
     this.overlay.innerHTML = `
       <style>
-        .message-detail-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          z-index: 1000;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 20px;
-          overflow-y: auto;
-        }
         ${this.getSharedStyles()}
         .detail-header {
           background: var(--pastel-green);

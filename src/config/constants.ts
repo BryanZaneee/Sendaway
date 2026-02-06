@@ -15,10 +15,3 @@ export const MESSAGE_TEXT_MAX_LENGTH = 4000;
 // Video constraints
 export const VIDEO_SIGNED_URL_EXPIRY_SECONDS = 604800; // 7 days
 
-// Delivery batch processing
-export const DELIVERY_BATCH_SIZE = 30;
-export const DELIVERY_TIMEOUT_MS = 45000;
-export const DELIVERY_RATE_LIMIT_MS = 1000;
-
-// Log retention
-export const LOG_RETENTION_DAYS = 90;

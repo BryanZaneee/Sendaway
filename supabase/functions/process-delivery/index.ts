@@ -3,13 +3,14 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 import { Resend } from 'https://esm.sh/resend@2.1.0';
 import { verifyCronSecret } from '../_shared/cron-auth.ts';
 import { getSupabaseAdmin } from '../_shared/supabase-admin.ts';
+import {
+  DELIVERY_BATCH_SIZE as BATCH_SIZE,
+  DELIVERY_TIMEOUT_MS as TIMEOUT_MS,
+  DELIVERY_RATE_LIMIT_MS as RATE_LIMIT_DELAY_MS,
+  VIDEO_SIGNED_URL_EXPIRY_SECONDS,
+} from '../_shared/constants.ts';
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY')!);
-const BATCH_SIZE = 30;
-// 45s timeout with 15s buffer for 60s Edge Function limit.
-// BATCH_SIZE=30 leaves margin for DB/API latency at 1 msg/s rate.
-const TIMEOUT_MS = 45000;
-const RATE_LIMIT_DELAY_MS = 1000;
 
 class ValidationError extends Error {
   constructor(message: string) {
@@ -241,7 +242,7 @@ async function composeDelivery(
   if (message.video_storage_path) {
     const { data: signedUrlData } = await supabase.storage
       .from('message-videos')
-      .createSignedUrl(message.video_storage_path, 604800);
+      .createSignedUrl(message.video_storage_path, VIDEO_SIGNED_URL_EXPIRY_SECONDS);
     videoUrl = signedUrlData?.signedUrl ?? null;
   }
 

@@ -164,15 +164,26 @@ class MessageService {
 
     // If there was a video, delete it from storage and update usage
     if (message.video_storage_path) {
-      await supabase.storage
-        .from('message-videos')
-        .remove([message.video_storage_path]);
+      try {
+        const { error: storageDeleteError } = await supabase.storage
+          .from('message-videos')
+          .remove([message.video_storage_path]);
 
-      // Reduce storage used
-      await supabase.rpc('update_storage_used', {
-        p_user_id: user.id,
-        p_delta_bytes: -message.video_size_bytes
-      });
+        if (storageDeleteError) {
+          console.error('Failed to delete video from storage:', storageDeleteError);
+        }
+
+        const { error: rpcError } = await supabase.rpc('update_storage_used', {
+          p_user_id: user.id,
+          p_delta_bytes: -message.video_size_bytes
+        });
+
+        if (rpcError) {
+          console.error('Failed to update storage quota:', rpcError);
+        }
+      } catch (error) {
+        console.error('Error during video cleanup:', error);
+      }
 
       await authService.refreshProfile();
     }

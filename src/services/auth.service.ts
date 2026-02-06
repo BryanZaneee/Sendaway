@@ -1,11 +1,10 @@
 import { supabase } from '../config/supabase';
 import type { Profile } from '../types/database';
-import type { User, Session } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
 
 export interface AuthState {
   user: User | null;
   profile: Profile | null;
-  session: Session | null;
 }
 
 class AuthService {
@@ -86,7 +85,6 @@ class AuthService {
     return {
       user: this.currentUser,
       profile: this.currentProfile,
-      session: null // Will be populated if needed
     };
   }
 
@@ -196,6 +194,24 @@ class AuthService {
   async refreshProfile(): Promise<void> {
     await this.fetchProfile();
     this.notifyListeners();
+  }
+
+  /**
+   * Sign in with Google OAuth
+   */
+  async signInWithGoogle(): Promise<{ error: string | null }> {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/`
+      }
+    });
+
+    if (error) {
+      return { error: error.message };
+    }
+
+    return { error: null };
   }
 }
 

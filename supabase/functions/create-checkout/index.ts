@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
 import Stripe from 'https://esm.sh/stripe@14.10.0?target=deno';
 import { getSupabaseAdmin } from '../_shared/supabase-admin.ts';
+import { PRO_UPGRADE_PRICE_CENTS } from '../_shared/constants.ts';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   apiVersion: '2023-10-16',
@@ -88,7 +89,7 @@ serve(async (req: Request) => {
               name: 'FtrMsg Pro',
               description: 'Unlimited messages, video support, 2GB storage',
             },
-            unit_amount: 900,
+            unit_amount: PRO_UPGRADE_PRICE_CENTS,
           },
           quantity: 1,
         },
@@ -107,7 +108,7 @@ serve(async (req: Request) => {
       .insert({
         user_id: userId,
         stripe_checkout_session_id: session.id,
-        amount_cents: 900,
+        amount_cents: PRO_UPGRADE_PRICE_CENTS,
         currency: 'usd',
         product_type: 'pro_upgrade',
         status: 'pending',
