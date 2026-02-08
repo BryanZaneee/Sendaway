@@ -6,6 +6,18 @@ import { isMessageUnlocked } from '../utils/message-status';
 import { VIDEO_SIGNED_URL_EXPIRY_SECONDS } from '../config/constants';
 import type { Message } from '../types/database';
 
+// --- SVG Icons (Feather-style, stroke-width 2, round caps/joins) ---
+
+const ICON_MAIL = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>`;
+
+const ICON_LOCK = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+
+const ICON_TRASH = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`;
+
+const ICON_VIDEO = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>`;
+
+const ICON_DOWNLOAD = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
+
 class MessageDetailModal {
   private overlay: HTMLElement | null = null;
   private message: Message | null = null;
@@ -202,6 +214,67 @@ class MessageDetailModal {
         align-items: center;
         gap: 15px;
       }
+      .header-icon {
+        width: 50px;
+        height: 50px;
+        background: white;
+        border: 2px solid black;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .header-icon svg {
+        width: 24px;
+        height: 24px;
+        color: #333;
+      }
+      .meta-row {
+        display: flex;
+        justify-content: space-around;
+        padding: 20px;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .meta-item {
+        background: #F5F5F5;
+        border: 2px solid black;
+        border-radius: 8px;
+        padding: 15px 20px;
+        text-align: center;
+        flex: 1;
+        min-width: 120px;
+      }
+      .meta-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #666;
+        margin-bottom: 5px;
+      }
+      .meta-value {
+        font-weight: 700;
+      }
+      .delete-section {
+        padding: 20px;
+        border-top: 2px solid #eee;
+        text-align: center;
+      }
+      .delete-btn {
+        background: none;
+        border: none;
+        color: #666;
+        font-family: inherit;
+        font-size: 0.9rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .delete-btn:hover {
+        color: #dc2626;
+      }
     `;
   }
 
@@ -246,17 +319,6 @@ class MessageDetailModal {
         .detail-header {
           background: #FDE68A;
         }
-        .lock-icon {
-          width: 50px;
-          height: 50px;
-          background: white;
-          border: 2px solid black;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 24px;
-        }
         .countdown-section {
           padding: 30px;
           text-align: center;
@@ -300,51 +362,6 @@ class MessageDetailModal {
           color: #555;
           margin-top: 5px;
         }
-        .meta-row {
-          display: flex;
-          justify-content: space-around;
-          padding: 20px;
-          gap: 10px;
-          flex-wrap: wrap;
-        }
-        .meta-item {
-          background: #F5F5F5;
-          border: 2px solid black;
-          border-radius: 8px;
-          padding: 15px 20px;
-          text-align: center;
-          flex: 1;
-          min-width: 120px;
-        }
-        .meta-label {
-          font-size: 0.75rem;
-          font-weight: 700;
-          text-transform: uppercase;
-          color: #666;
-          margin-bottom: 5px;
-        }
-        .meta-value {
-          font-weight: 700;
-        }
-        .delete-section {
-          padding: 20px;
-          border-top: 2px solid #eee;
-          text-align: center;
-        }
-        .delete-btn {
-          background: none;
-          border: none;
-          color: #666;
-          font-family: inherit;
-          font-size: 0.9rem;
-          cursor: pointer;
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-        }
-        .delete-btn:hover {
-          color: #dc2626;
-        }
       </style>
 
       <button class="back-btn" id="backBtn">
@@ -353,7 +370,7 @@ class MessageDetailModal {
 
       <div class="detail-card">
         <div class="detail-header">
-          <div class="lock-icon">&#128274;</div>
+          <div class="header-icon">${ICON_LOCK}</div>
           <div>
             <h2 style="margin: 0; font-size: 1.5rem;">Message Locked</h2>
             <p style="margin: 5px 0 0 0; color: #555;">Patience. Good things are waiting.</p>
@@ -400,7 +417,7 @@ class MessageDetailModal {
         ${isPending ? `
           <div class="delete-section">
             <button class="delete-btn" id="deleteBtn">
-              <span>&#128465;</span> Delete message
+              ${ICON_TRASH} Delete message
             </button>
           </div>
         ` : ''}
@@ -417,14 +434,16 @@ class MessageDetailModal {
   }
 
   /**
-   * Generates unlocked message HTML with text, video player (if video exists), and download button
+   * Generates unlocked/delivered message HTML with purple header, bordered message box, metadata, and video
    */
   private async renderUnlocked(): Promise<void> {
     if (!this.message) return;
 
+    const createdDate = formatDate(new Date(this.message.created_at));
     const deliveredDate = this.message.delivered_at
       ? formatDate(new Date(this.message.delivered_at))
       : formatDate(new Date(this.message.scheduled_date));
+    const waitTime = this.getWaitTime();
 
     let videoError = false;
     if (this.message.video_storage_path) {
@@ -451,25 +470,18 @@ class MessageDetailModal {
       <style>
         ${this.getSharedStyles()}
         .detail-header {
-          background: var(--pastel-green);
+          background: var(--pastel-purple, #E0CFFC);
         }
-        .unlock-icon {
-          width: 50px;
-          height: 50px;
-          background: white;
-          border: 2px solid black;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 24px;
-        }
-        .message-content {
-          padding: 25px;
-          max-height: 300px;
-          overflow-y: auto;
+        .message-box {
+          margin: 20px;
+          padding: 24px;
+          background: var(--pastel-blue);
+          border: 3px solid black;
+          border-radius: 10px;
           white-space: pre-wrap;
-          line-height: 1.6;
+          line-height: 1.7;
+          max-height: 350px;
+          overflow-y: auto;
         }
         .video-section {
           padding: 20px 25px;
@@ -503,13 +515,6 @@ class MessageDetailModal {
           text-align: center;
           color: #991B1B;
         }
-        .delivered-badge {
-          padding: 15px 25px;
-          background: #F5F5F5;
-          border-top: 2px solid #eee;
-          font-size: 0.9rem;
-          color: #555;
-        }
       </style>
 
       <button class="back-btn" id="backBtn">
@@ -518,20 +523,35 @@ class MessageDetailModal {
 
       <div class="detail-card">
         <div class="detail-header">
-          <div class="unlock-icon">&#10003;</div>
+          <div class="header-icon">${ICON_MAIL}</div>
           <div>
-            <h2 style="margin: 0; font-size: 1.5rem;">Message Unlocked</h2>
-            <p style="margin: 5px 0 0 0; color: #555;">Your message from the past has arrived.</p>
+            <h2 style="margin: 0; font-size: 1.5rem;">Message Delivered</h2>
+            <p style="margin: 5px 0 0 0; color: #555;">A note from your past self</p>
           </div>
         </div>
 
-        <div class="message-content">${this.message.message_text}</div>
+        <div class="meta-row">
+          <div class="meta-item">
+            <div class="meta-label">Created</div>
+            <div class="meta-value">${createdDate}</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Wait Time</div>
+            <div class="meta-value">${waitTime}</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Delivered</div>
+            <div class="meta-value">${deliveredDate}</div>
+          </div>
+        </div>
+
+        <div class="message-box">${this.message.message_text}</div>
 
         ${this.message.video_storage_path ? `
           <div class="video-section">
             ${videoError ? `
               <div class="video-error">
-                <p style="margin: 0;">&#9888; Video unavailable</p>
+                <p style="margin: 0;">${ICON_VIDEO} Video unavailable</p>
                 <p style="margin: 10px 0 0 0; font-size: 0.85rem;">The video file could not be loaded.</p>
               </div>
             ` : `
@@ -540,20 +560,26 @@ class MessageDetailModal {
                 Your browser does not support the video tag.
               </video>
               <a href="${this.signedUrl}" download class="download-btn">
-                <span>&#8595;</span> Download Video
+                ${ICON_DOWNLOAD} Download Video
               </a>
             `}
           </div>
         ` : ''}
 
-        <div class="delivered-badge">
-          Delivered on ${deliveredDate}
+        <div class="delete-section">
+          <button class="delete-btn" id="deleteBtn">
+            ${ICON_TRASH} Delete message
+          </button>
         </div>
       </div>
     `;
 
     this.overlay.querySelector('#backBtn')?.addEventListener('click', () => {
       this.hide();
+    });
+
+    this.overlay.querySelector('#deleteBtn')?.addEventListener('click', () => {
+      this.handleDelete();
     });
   }
 }
