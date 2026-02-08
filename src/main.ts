@@ -5,8 +5,6 @@ import { toast } from './components/toast';
 import { initScrollAnimations } from './utils/scroll-animations';
 
 let dropdownCloseHandler: ((e: MouseEvent) => void) | null = null;
-const DEFAULT_HERO = 'Write it now.<br>Read it later.';
-let currentHeroHTML = DEFAULT_HERO;
 
 // Initialize the application
 function init(): void {
@@ -24,7 +22,6 @@ function init(): void {
       : '';
     const email = user?.email || '';
     updateAuthUI(user !== null, state.profile?.tier === 'pro', displayName, email);
-    updateHeroHeading(user !== null, displayName);
   });
 
   // Check for success/cancel from Stripe redirect
@@ -43,9 +40,15 @@ function setupAnimations(): void {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // Hero headline — split into staggered lines
-  const heroHeading = document.getElementById('heroHeading');
+  const heroHeading = document.querySelector('.hero h1');
   if (heroHeading) {
-    animateHeroHeading(heroHeading);
+    const lines = heroHeading.innerHTML.split('<br>');
+    heroHeading.innerHTML = lines
+      .map(
+        (line, i) =>
+          `<div style="opacity:0" class="animate-hero-text stagger-${i + 1}">${line}</div>`
+      )
+      .join('');
   }
 
   // Hero form — bounce entrance after short delay
@@ -151,41 +154,6 @@ function setupAnimations(): void {
 //     });
 //   }
 // }
-
-/**
- * Apply staggered fade-in animation to hero heading lines (split on <br>)
- */
-function animateHeroHeading(heading: HTMLElement): void {
-  const lines = heading.innerHTML.split('<br>');
-  heading.innerHTML = lines
-    .map(
-      (line, i) =>
-        `<div style="opacity:0" class="animate-hero-text stagger-${i + 1}">${line}</div>`
-    )
-    .join('');
-}
-
-/**
- * Update hero heading based on auth state
- */
-function updateHeroHeading(isLoggedIn: boolean, displayName: string): void {
-  const heading = document.getElementById('heroHeading');
-  if (!heading) return;
-
-  let newHTML: string;
-  if (isLoggedIn) {
-    const firstName = displayName.split(' ')[0] || displayName;
-    newHTML = `Hello, ${firstName}<br><div style="font-size: 1.2rem; font-weight: 400; margin-top: 8px; color: #555;">Write to your future self, we'll deliver</div>`;
-  } else {
-    newHTML = DEFAULT_HERO;
-  }
-
-  if (newHTML === currentHeroHTML) return;
-  currentHeroHTML = newHTML;
-
-  heading.innerHTML = newHTML;
-  animateHeroHeading(heading);
-}
 
 /**
  * Update header UI based on auth state
