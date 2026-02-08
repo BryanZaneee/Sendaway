@@ -41,21 +41,28 @@ class AuthService {
     this.notifyListeners();
   }
 
-  private async fetchProfile() {
+  private async fetchProfile(retries = 3) {
     if (!this.currentUser) return;
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', this.currentUser.id)
-      .single();
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', this.currentUser.id)
+        .single();
 
-    if (error) {
-      console.error('Error fetching profile:', error);
-      return;
+      if (data) {
+        this.currentProfile = data;
+        return;
+      }
+
+      if (attempt < retries) {
+        console.warn(`Profile fetch attempt ${attempt} failed, retrying...`, error?.message);
+        await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+      } else {
+        console.error('Error fetching profile after retries:', error);
+      }
     }
-
-    this.currentProfile = data;
   }
 
   private notifyListeners() {

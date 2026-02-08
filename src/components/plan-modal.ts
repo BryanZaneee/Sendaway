@@ -34,8 +34,13 @@ class PlanModal {
     }
   }
 
-  private render(): void {
+  private async render(): Promise<void> {
     this.overlay?.remove();
+
+    // Ensure profile is loaded (may be pending after OAuth redirect)
+    if (!authService.getProfile()) {
+      await authService.refreshProfile();
+    }
 
     const profile = authService.getProfile();
     const isPro = profile?.tier === 'pro';
@@ -134,8 +139,8 @@ class PlanModal {
 
   private setupHandlers(): void {
     // Confirm send (Pro users)
-    document.getElementById('confirmSendBtn')?.addEventListener('click', () => {
-      this.sendMessage();
+    document.getElementById('confirmSendBtn')?.addEventListener('click', (e) => {
+      this.sendMessage(e.currentTarget as HTMLButtonElement);
     });
 
     // Go Pro button
@@ -148,7 +153,8 @@ class PlanModal {
     });
 
     // Send Free button
-    document.getElementById('sendFreeBtn')?.addEventListener('click', () => {
+    document.getElementById('sendFreeBtn')?.addEventListener('click', (e) => {
+      const btn = e.currentTarget as HTMLButtonElement;
       if (this.data?.hasVideo) {
         // Confirm they want to proceed without video
         if (!confirm('Your video will not be included with the free plan. Continue with text only?')) {
@@ -159,7 +165,7 @@ class PlanModal {
         this.data.messageData.videoSizeBytes = undefined;
         this.data.messageData.videoDurationSeconds = undefined;
       }
-      this.sendMessage();
+      this.sendMessage(btn);
     });
 
     // Cancel button
@@ -168,10 +174,12 @@ class PlanModal {
     });
   }
 
-  private async sendMessage(): Promise<void> {
+  private async sendMessage(triggerBtn?: HTMLButtonElement): Promise<void> {
     if (!this.data) return;
 
-    const btn = document.querySelector('#planModal .btn:first-of-type') as HTMLButtonElement;
+    // Use the button that triggered the send, or fall back to confirm button
+    const btn = triggerBtn || document.getElementById('confirmSendBtn') as HTMLButtonElement | null;
+    const originalText = btn?.textContent || '';
     if (btn) {
       btn.disabled = true;
       btn.textContent = 'Sending...';
@@ -187,7 +195,7 @@ class PlanModal {
       toast.error(result.error || 'Failed to send message');
       if (btn) {
         btn.disabled = false;
-        btn.textContent = 'Try Again';
+        btn.textContent = originalText;
       }
     }
   }

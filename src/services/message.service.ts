@@ -23,10 +23,20 @@ class MessageService {
    */
   async createMessage(data: CreateMessageData): Promise<CreateMessageResult> {
     const user = authService.getUser();
-    const profile = authService.getProfile();
+    let profile = authService.getProfile();
 
-    if (!user || !profile) {
+    if (!user) {
       return { success: false, error: 'You must be logged in to send a message' };
+    }
+
+    // Profile may not be loaded yet (e.g. after OAuth redirect) — try refreshing
+    if (!profile) {
+      await authService.refreshProfile();
+      profile = authService.getProfile();
+    }
+
+    if (!profile) {
+      return { success: false, error: 'Unable to load your profile. Please try again.' };
     }
 
     // Check tier restrictions
@@ -69,17 +79,13 @@ class MessageService {
       return { success: false, error: 'Failed to create message. Please try again.' };
     }
 
-    // If free tier, mark free message as used with optimistic locking
+    // If free tier, mark free message as used via RPC (bypasses profile field protection trigger)
     if (!profile.tier || profile.tier === 'free') {
-      const { data: updated, error: lockError } = await supabase
-        .from('profiles')
-        .update({ free_message_used: true })
-        .eq('id', user.id)
-        .eq('free_message_used', false)
-        .select()
-        .single();
+      const { data: marked, error: rpcError } = await supabase.rpc('mark_free_message_used', {
+        p_user_id: user.id,
+      });
 
-      if (lockError || !updated) {
+      if (rpcError || !marked) {
         // Rollback: delete the message we just created
         await supabase.from('messages').delete().eq('id', message.id);
         return { success: false, error: 'Your free message has already been used. Upgrade to Pro for unlimited messages.' };
