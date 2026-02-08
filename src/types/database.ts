@@ -207,6 +207,12 @@ export interface Database {
         };
         Returns: boolean;
       };
+      reset_free_message_used: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: boolean;
+      };
       update_storage_used: {
         Args: {
           p_user_id: string;

@@ -1,3 +1,4 @@
+import { supabase } from '../config/supabase';
 import { authService } from '../services/auth.service';
 import { messageService, CreateMessageData } from '../services/message.service';
 import { paymentService } from '../services/payment.service';
@@ -105,6 +106,9 @@ class PlanModal {
         <button class="btn" id="goProBtn" style="margin-bottom: 10px; background: var(--pastel-pink);">
           Go Pro - $9 One-Time
         </button>
+        <button class="btn btn-outline" id="deleteExistingBtn" style="margin-bottom: 10px;">
+          Delete Existing Message
+        </button>
         <button class="btn btn-outline" id="cancelBtn">
           Cancel
         </button>
@@ -168,10 +172,49 @@ class PlanModal {
       this.sendMessage(btn);
     });
 
+    // Delete existing message button
+    document.getElementById('deleteExistingBtn')?.addEventListener('click', () => {
+      this.handleDeleteExistingMessage();
+    });
+
     // Cancel button
     document.getElementById('cancelBtn')?.addEventListener('click', () => {
       this.hide();
     });
+  }
+
+  private async handleDeleteExistingMessage(): Promise<void> {
+    if (!confirm('This will permanently delete your existing pending message. Continue?')) {
+      return;
+    }
+
+    const user = authService.getUser();
+    if (!user) return;
+
+    const { data: messages, error: fetchError } = await supabase
+      .from('messages')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('status', 'pending')
+      .limit(1);
+
+    if (fetchError || !messages || messages.length === 0) {
+      toast.error('Could not find your existing message.');
+      return;
+    }
+
+    const result = await messageService.cancelMessage(messages[0].id);
+    if (result.success) {
+      toast.success('Message deleted. You can now send a new one.');
+      // Refresh dashboard to reflect deletion
+      import('./messages-dashboard').then(({ messagesDashboard }) => {
+        messagesDashboard.refresh();
+      });
+      // Re-render modal — free_message_used is now reset, so it will show plan selection
+      this.render();
+    } else {
+      toast.error(result.error || 'Failed to delete message.');
+    }
   }
 
   private async sendMessage(triggerBtn?: HTMLButtonElement): Promise<void> {

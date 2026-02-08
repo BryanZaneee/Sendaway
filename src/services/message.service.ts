@@ -85,8 +85,13 @@ class MessageService {
         p_user_id: user.id,
       });
 
-      if (rpcError || !marked) {
-        // Rollback: delete the message we just created
+      if (rpcError) {
+        console.error('Error marking free message used:', rpcError);
+        await supabase.from('messages').delete().eq('id', message.id);
+        return { success: false, error: 'Failed to send message. Please try again.' };
+      }
+
+      if (!marked) {
         await supabase.from('messages').delete().eq('id', message.id);
         return { success: false, error: 'Your free message has already been used. Upgrade to Pro for unlimited messages.' };
       }
@@ -191,6 +196,18 @@ class MessageService {
         console.error('Error during video cleanup:', error);
       }
 
+      await authService.refreshProfile();
+    }
+
+    // If free tier with free_message_used, reset the flag now that message is deleted
+    const profile = authService.getProfile();
+    if (profile && profile.tier === 'free' && profile.free_message_used) {
+      const { error: resetError } = await supabase.rpc('reset_free_message_used', {
+        p_user_id: user.id,
+      });
+      if (resetError) {
+        console.error('Failed to reset free_message_used:', resetError);
+      }
       await authService.refreshProfile();
     }
 
