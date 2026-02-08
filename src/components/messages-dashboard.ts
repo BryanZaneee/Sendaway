@@ -13,7 +13,6 @@ const ICON_MAIL = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" s
 
 const ICON_LOCK_OPEN = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>`;
 
-const ICON_LOCK_CLOSED = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
 
 const ICON_CHECK_CIRCLE = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
 
@@ -260,23 +259,6 @@ class MessagesDashboard {
         .msg-card.unlocked { background: var(--pastel-purple); }
         .msg-card.locked {
           background: var(--pastel-yellow);
-          border-radius: 0 0 14px 14px;
-          padding-top: 48px;
-          overflow: visible;
-          position: relative;
-        }
-        .msg-card.locked::before {
-          content: '';
-          position: absolute;
-          top: -3px;
-          left: -3px;
-          right: -3px;
-          height: 52px;
-          background: #f0d76a;
-          clip-path: polygon(0 0, 100% 0, 50% 100%);
-          border: 3px solid black;
-          border-bottom: none;
-          z-index: 0;
         }
         .msg-card.delivered { background: var(--pastel-green); }
 
@@ -294,12 +276,9 @@ class MessagesDashboard {
         }
         .msg-card.unlocked .card-icon-circle { background: rgba(139, 92, 246, 0.15); color: #7c3aed; }
         .msg-card.locked .card-icon-circle {
-          background: white;
+          background: rgba(187, 247, 208, 0.5);
           border: 3px solid black;
-          color: #b45309;
-          position: relative;
-          z-index: 1;
-          margin-top: -8px;
+          color: #333;
         }
         .msg-card.delivered .card-icon-circle { background: rgba(22, 163, 74, 0.15); color: #15803d; }
 
@@ -456,7 +435,7 @@ class MessagesDashboard {
         dateValue = scheduledDate;
         break;
       case 'locked':
-        icon = ICON_LOCK_CLOSED;
+        icon = ICON_MAIL;
         statusLabel = 'Locked';
         dateLabel = 'Unlocks';
         dateValue = scheduledDate;
