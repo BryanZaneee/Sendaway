@@ -23,9 +23,9 @@ const ICON_CALENDAR = `<svg width="14" height="14" viewBox="0 0 24 24" fill="non
 
 const ICON_VIDEO = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>`;
 
-type MessageGroup = 'unlocked' | 'locked' | 'delivered';
+export type MessageGroup = 'unlocked' | 'locked' | 'delivered';
 
-function getMessageGroup(message: Message): MessageGroup {
+export function getMessageGroup(message: Message): MessageGroup {
   if (message.status === 'delivered') return 'delivered';
   if (isMessageUnlocked(message)) return 'unlocked';
   return 'locked';
@@ -44,6 +44,7 @@ class MessagesDashboard {
   private offset: number = 0;
   private hasMore: boolean = true;
   private isLoading: boolean = false;
+  private showInProgress: boolean = false;
 
   /**
    * Attaches auth state listener to show/hide dashboard based on login status
@@ -64,25 +65,31 @@ class MessagesDashboard {
    * Displays dashboard, hides landing sections, fetches and renders messages
    */
   async show(): Promise<void> {
-    this.messages = [];
-    this.offset = 0;
-    this.hasMore = true;
+    if (this.showInProgress) return;
+    this.showInProgress = true;
+    try {
+      this.messages = [];
+      this.offset = 0;
+      this.hasMore = true;
 
-    document.getElementById('howItWorks')?.classList.add('hidden');
-    document.getElementById('messageDemoSection')?.classList.add('hidden');
-    document.getElementById('trustSection')?.classList.add('hidden');
-    document.getElementById('pricingSection')?.classList.add('hidden');
-    document.getElementById('faqSection')?.classList.add('hidden');
-    document.getElementById('navLinks')?.classList.add('hidden');
-    document.getElementById('socialProofBand')?.classList.add('hidden');
-    document.getElementById('footerCtaCol')?.classList.add('hidden');
+      document.getElementById('howItWorks')?.classList.add('hidden');
+      document.getElementById('messageDemoSection')?.classList.add('hidden');
+      document.getElementById('trustSection')?.classList.add('hidden');
+      document.getElementById('pricingSection')?.classList.add('hidden');
+      document.getElementById('faqSection')?.classList.add('hidden');
+      document.getElementById('navLinks')?.classList.add('hidden');
+      document.getElementById('socialProofBand')?.classList.add('hidden');
+      document.getElementById('footerCtaCol')?.classList.add('hidden');
 
-    if (this.container) {
-      this.container.classList.remove('hidden');
+      if (this.container) {
+        this.container.classList.remove('hidden');
+      }
+
+      await this.fetchMessages();
+      this.render();
+    } finally {
+      this.showInProgress = false;
     }
-
-    await this.fetchMessages();
-    this.render();
   }
 
   /**
@@ -251,7 +258,26 @@ class MessagesDashboard {
           box-shadow: 7px 7px 0px 0px black;
         }
         .msg-card.unlocked { background: var(--pastel-purple); }
-        .msg-card.locked { background: var(--pastel-yellow); }
+        .msg-card.locked {
+          background: var(--pastel-yellow);
+          border-radius: 0 0 14px 14px;
+          padding-top: 48px;
+          overflow: visible;
+          position: relative;
+        }
+        .msg-card.locked::before {
+          content: '';
+          position: absolute;
+          top: -3px;
+          left: -3px;
+          right: -3px;
+          height: 52px;
+          background: #f0d76a;
+          clip-path: polygon(0 0, 100% 0, 50% 100%);
+          border: 3px solid black;
+          border-bottom: none;
+          z-index: 0;
+        }
         .msg-card.delivered { background: var(--pastel-green); }
 
         .card-icon-circle {
@@ -267,7 +293,14 @@ class MessagesDashboard {
           height: 30px;
         }
         .msg-card.unlocked .card-icon-circle { background: rgba(139, 92, 246, 0.15); color: #7c3aed; }
-        .msg-card.locked .card-icon-circle { background: rgba(217, 119, 6, 0.15); color: #b45309; }
+        .msg-card.locked .card-icon-circle {
+          background: white;
+          border: 3px solid black;
+          color: #b45309;
+          position: relative;
+          z-index: 1;
+          margin-top: -8px;
+        }
         .msg-card.delivered .card-icon-circle { background: rgba(22, 163, 74, 0.15); color: #15803d; }
 
         .card-status {
