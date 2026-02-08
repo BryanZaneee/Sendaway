@@ -41,6 +41,9 @@ class MessagesDashboard {
     document.getElementById('trustSection')?.classList.add('hidden');
     document.getElementById('pricingSection')?.classList.add('hidden');
     document.getElementById('faqSection')?.classList.add('hidden');
+    document.getElementById('navLinks')?.classList.add('hidden');
+    document.getElementById('socialProofBand')?.classList.add('hidden');
+    document.getElementById('footerCtaCol')?.classList.add('hidden');
 
     if (this.container) {
       this.container.classList.remove('hidden');
@@ -59,6 +62,9 @@ class MessagesDashboard {
     document.getElementById('trustSection')?.classList.remove('hidden');
     document.getElementById('pricingSection')?.classList.remove('hidden');
     document.getElementById('faqSection')?.classList.remove('hidden');
+    document.getElementById('navLinks')?.classList.remove('hidden');
+    document.getElementById('socialProofBand')?.classList.remove('hidden');
+    document.getElementById('footerCtaCol')?.classList.remove('hidden');
 
     if (this.container) {
       this.container.classList.add('hidden');

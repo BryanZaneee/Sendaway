@@ -4,6 +4,8 @@ import { messagesDashboard } from './components/messages-dashboard';
 import { toast } from './components/toast';
 import { initScrollAnimations } from './utils/scroll-animations';
 
+let dropdownCloseHandler: ((e: MouseEvent) => void) | null = null;
+
 // Initialize the application
 function init(): void {
   // Initialize form handler
@@ -14,7 +16,12 @@ function init(): void {
 
   // Update UI based on auth state
   authService.onAuthStateChange((state) => {
-    updateAuthUI(state.user !== null, state.profile?.tier === 'pro');
+    const user = state.user;
+    const displayName = user
+      ? user.user_metadata?.full_name || user.user_metadata?.name || user.email || 'Account'
+      : '';
+    const email = user?.email || '';
+    updateAuthUI(user !== null, state.profile?.tier === 'pro', displayName, email);
   });
 
   // Check for success/cancel from Stripe redirect
@@ -151,9 +158,15 @@ function setupAnimations(): void {
 /**
  * Update header UI based on auth state
  */
-function updateAuthUI(isLoggedIn: boolean, isPro: boolean): void {
+function updateAuthUI(isLoggedIn: boolean, isPro: boolean, displayName: string, email: string): void {
   const navInner = document.querySelector('.nav-inner');
   if (!navInner) return;
+
+  // Clean up previous dropdown close handler
+  if (dropdownCloseHandler) {
+    document.removeEventListener('click', dropdownCloseHandler);
+    dropdownCloseHandler = null;
+  }
 
   // Remove existing auth button if any
   const existingAuthBtn = document.getElementById('authBtn');
@@ -165,15 +178,32 @@ function updateAuthUI(isLoggedIn: boolean, isPro: boolean): void {
   authBtn.style.cssText = 'display: flex; align-items: center; gap: 15px;';
 
   if (isLoggedIn) {
+    // Truncate display name for the button
+    const truncatedName = displayName.length > 20 ? displayName.substring(0, 20) + '...' : displayName;
+
     authBtn.innerHTML = `
       ${isPro ? `
         <span style="background: var(--pastel-pink); border: 2px solid black; padding: 3px 8px; font-weight: 700; font-size: 0.8rem;">
           PRO
         </span>
       ` : ''}
-      <button id="signOutBtn" style="background: none; border: none; font-family: inherit; font-weight: 700; cursor: pointer; text-decoration: underline;">
-        Sign Out
-      </button>
+      <div style="position: relative;">
+        <button id="userMenuBtn" style="background: none; border: 2px solid black; border-radius: 12px; font-family: inherit; font-weight: 700; cursor: pointer; padding: 6px 14px; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; transition: background 0.15s ease;">
+          ${truncatedName}
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="2,4 6,8 10,4"></polyline>
+          </svg>
+        </button>
+        <div id="userDropdown" style="display: none; position: absolute; right: 0; top: calc(100% + 8px); min-width: 220px; background: white; border: 3px solid black; border-radius: 12px; box-shadow: 4px 4px 0px 0px black; z-index: 200; overflow: hidden;">
+          <div style="padding: 14px 16px; border-bottom: 2px solid #eee;">
+            <div style="font-weight: 700; font-size: 0.95rem; word-break: break-word;">${displayName}</div>
+            <div style="font-size: 0.8rem; color: #555; margin-top: 2px; word-break: break-all;">${email}</div>
+          </div>
+          <button id="dropdownSignOutBtn" style="width: 100%; background: none; border: none; font-family: inherit; font-weight: 700; font-size: 0.9rem; cursor: pointer; padding: 12px 16px; text-align: left; transition: background 0.15s ease;">
+            Sign Out
+          </button>
+        </div>
+      </div>
     `;
   } else {
     authBtn.innerHTML = `
@@ -185,13 +215,36 @@ function updateAuthUI(isLoggedIn: boolean, isPro: boolean): void {
 
   navInner.appendChild(authBtn);
 
-  // Attach listeners after DOM insertion to ensure elements exist
-  const signOutBtn = document.getElementById('signOutBtn');
+  // Attach listeners after DOM insertion
+  const userMenuBtn = document.getElementById('userMenuBtn');
+  const userDropdown = document.getElementById('userDropdown');
+  const dropdownSignOutBtn = document.getElementById('dropdownSignOutBtn');
   const signInBtn = document.getElementById('signInBtn');
 
-  signOutBtn?.addEventListener('click', async () => {
+  if (userMenuBtn && userDropdown) {
+    userMenuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = userDropdown.style.display === 'block';
+      userDropdown.style.display = isOpen ? 'none' : 'block';
+    });
+
+    dropdownCloseHandler = () => {
+      userDropdown.style.display = 'none';
+    };
+    document.addEventListener('click', dropdownCloseHandler);
+  }
+
+  dropdownSignOutBtn?.addEventListener('click', async () => {
     await authService.signOut();
     toast.info('Signed out');
+  });
+
+  // Hover effect on sign out button
+  dropdownSignOutBtn?.addEventListener('mouseenter', () => {
+    dropdownSignOutBtn.style.background = 'var(--pastel-pink)';
+  });
+  dropdownSignOutBtn?.addEventListener('mouseleave', () => {
+    dropdownSignOutBtn.style.background = 'none';
   });
 
   signInBtn?.addEventListener('click', () => {
