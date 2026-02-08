@@ -194,6 +194,19 @@ export interface Database {
       [_ in never]: never;
     };
     Functions: {
+      ensure_profile_exists: {
+        Args: {
+          p_user_id: string;
+          p_email: string;
+        };
+        Returns: undefined;
+      };
+      mark_free_message_used: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: boolean;
+      };
       update_storage_used: {
         Args: {
           p_user_id: string;

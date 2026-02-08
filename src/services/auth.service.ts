@@ -41,27 +41,40 @@ class AuthService {
     this.notifyListeners();
   }
 
-  private async fetchProfile(retries = 3) {
+  private async fetchProfile() {
     if (!this.currentUser) return;
 
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', this.currentUser.id)
-        .single();
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', this.currentUser.id)
+      .single();
 
-      if (data) {
-        this.currentProfile = data;
-        return;
-      }
+    if (data) {
+      this.currentProfile = data;
+      return;
+    }
 
-      if (attempt < retries) {
-        console.warn(`Profile fetch attempt ${attempt} failed, retrying...`, error?.message);
-        await new Promise(resolve => setTimeout(resolve, 500 * attempt));
-      } else {
-        console.error('Error fetching profile after retries:', error);
-      }
+    // Profile missing — create it via RPC (handles OAuth identity linking,
+    // missing trigger, or trigger failure)
+    console.warn('Profile not found, creating via RPC...', error?.message);
+    const email = this.currentUser.email ?? this.currentUser.user_metadata?.email ?? '';
+    await supabase.rpc('ensure_profile_exists', {
+      p_user_id: this.currentUser.id,
+      p_email: email,
+    });
+
+    // Fetch the newly created profile
+    const { data: newProfile, error: retryError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', this.currentUser.id)
+      .single();
+
+    if (newProfile) {
+      this.currentProfile = newProfile;
+    } else {
+      console.error('Failed to create/fetch profile:', retryError);
     }
   }
 
