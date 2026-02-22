@@ -344,7 +344,7 @@
         .step-number {
             position: absolute;
             top: -20px;
-            left: 20px;
+            right: 20px;
             background: var(--pastel-blue);
             border: 2px solid black;
             width: 40px;
@@ -384,7 +384,7 @@
         }
 
         .price-card.featured::after {
-            content: "POPULAR";
+            content: "COMING SOON!";
             position: absolute;
             top: -15px;
             right: 20px;
@@ -1201,24 +1201,70 @@
             <details>
                 <summary>Is my data secure?</summary>
                 <div class="faq-content">
-                    <p>Yes. All messages are encrypted at rest. No one can read them until the scheduled release date,
-                        not even us.</p>
+                    <p>Yes. All messages are encrypted at rest and stored in private storage. Video URLs are signed and expire after 7 days, so only your intended recipient can view them.</p>
                 </div>
             </details>
 
             <details>
                 <summary>Can I send video on the free plan?</summary>
                 <div class="faq-content">
-                    <p>The free plan is strictly text-only. To send video memories, you will need the Pro one-time
-                        upgrade.</p>
+                    <p>No. Video messages require the one-time $9 Pro upgrade. The free plan supports a single text-only message.</p>
                 </div>
             </details>
 
             <details>
-                <summary>What if I change my email?</summary>
+                <summary>How does delivery work?</summary>
                 <div class="faq-content">
-                    <p>If you have a Pro account, you can log in to update your delivery settings. For free users,
-                        please contact support.</p>
+                    <p>Messages are delivered via email on your scheduled date. Text appears directly in the email body. If your message includes video, the email contains a secure "Watch Video" link.</p>
+                </div>
+            </details>
+
+            <details>
+                <summary>What time will my message arrive?</summary>
+                <div class="faq-content">
+                    <p>Messages are sent at 8 AM UTC on the scheduled date.</p>
+                </div>
+            </details>
+
+            <details>
+                <summary>Can I cancel or edit a scheduled message?</summary>
+                <div class="faq-content">
+                    <p>Yes. Pending messages can be cancelled from your dashboard at any time before delivery. Once a message has been delivered, it cannot be modified.</p>
+                </div>
+            </details>
+
+            <details>
+                <summary>What happens if I delete my free message?</summary>
+                <div class="faq-content">
+                    <p>Your free message slot is restored and you can schedule a new one.</p>
+                </div>
+            </details>
+
+            <details>
+                <summary>What video formats are supported?</summary>
+                <div class="faq-content">
+                    <p>MP4, WebM, and MOV. Maximum 3 minutes per video.</p>
+                </div>
+            </details>
+
+            <details>
+                <summary>Is Pro a subscription?</summary>
+                <div class="faq-content">
+                    <p>No. Pro is a one-time $9 payment — no recurring charges, ever.</p>
+                </div>
+            </details>
+
+            <details>
+                <summary>How much storage do Pro users get?</summary>
+                <div class="faq-content">
+                    <p>2 GB total for video messages, shared across all your scheduled messages.</p>
+                </div>
+            </details>
+
+            <details>
+                <summary>How far in the future can I schedule?</summary>
+                <div class="faq-content">
+                    <p>Any date from tomorrow onward. Quick-select options include 3 months, 6 months, 1 year, and 5 years.</p>
                 </div>
             </details>
         </div>
@@ -1233,7 +1279,7 @@
     <footer style="background: white;">
         <div class="social-proof-band" id="socialProofBand">
             <div class="container">
-                <p>Join <span data-counter="1000">1,000</span>+ people sending messages to their future selves</p>
+                <p>Join Everyone sending messages to their future selves</p>
             </div>
         </div>
         <div class="container">
