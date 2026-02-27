@@ -189,6 +189,61 @@ export interface Database {
           }
         ];
       };
+      notification_queue: {
+        Row: {
+          id: string;
+          message_id: string;
+          notification_type: 'scheduled_confirmation';
+          recipient_email: string;
+          status: 'pending' | 'delivered' | 'failed';
+          attempt_count: number;
+          max_attempts: number;
+          next_attempt_at: string;
+          email_provider_id: string | null;
+          last_error: string | null;
+          delivered_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          message_id: string;
+          notification_type: 'scheduled_confirmation';
+          recipient_email: string;
+          status?: 'pending' | 'delivered' | 'failed';
+          attempt_count?: number;
+          max_attempts?: number;
+          next_attempt_at?: string;
+          email_provider_id?: string | null;
+          last_error?: string | null;
+          delivered_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          message_id?: string;
+          notification_type?: 'scheduled_confirmation';
+          recipient_email?: string;
+          status?: 'pending' | 'delivered' | 'failed';
+          attempt_count?: number;
+          max_attempts?: number;
+          next_attempt_at?: string;
+          email_provider_id?: string | null;
+          last_error?: string | null;
+          delivered_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notification_queue_message_id_fkey';
+            columns: ['message_id'];
+            referencedRelation: 'messages';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -234,3 +289,4 @@ export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Message = Database['public']['Tables']['messages']['Row'];
 export type Payment = Database['public']['Tables']['payments']['Row'];
 export type DeliveryLog = Database['public']['Tables']['delivery_logs']['Row'];
+export type NotificationQueue = Database['public']['Tables']['notification_queue']['Row'];

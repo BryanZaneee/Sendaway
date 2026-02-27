@@ -47,10 +47,12 @@ Single-page app (Vite + Vanilla TypeScript) backed by Supabase.
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │              SUPABASE (Backend as a Service)                │
-│  Database: Messages, profiles, payments, delivery_logs      │
+│  Database: Messages, profiles, payments, delivery_logs,      │
+│            notification_queue                                │
 │  Auth: Email/password authentication                        │
 │  Storage: Video files in 'message-videos' bucket            │
-│  Edge Functions: Stripe checkout, webhooks, message delivery│
+│  Edge Functions: Stripe checkout, webhooks, scheduled notif. │
+│                 and message delivery                         │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -58,7 +60,7 @@ Single-page app (Vite + Vanilla TypeScript) backed by Supabase.
 │                   EXTERNAL SERVICES                         │
 │  Stripe: Payment processing ($9 Pro upgrade)                │
 │  Resend: Transactional email delivery                       │
-│  cron-job.org: Daily trigger at 8 AM UTC                    │
+│  cron-job.org: Triggers confirmations + daily delivery       │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -74,7 +76,9 @@ Single-page app (Vite + Vanilla TypeScript) backed by Supabase.
 
 **Compensating transactions:** Supabase lacks multi-resource transactions. On storage quota failure after video upload: delete video from storage + delete message record.
 
-**Delivery idempotency:** Check `delivery_logs` for `status='delivered'` before sending email. `messages.status` is derived state updated after `delivery_logs` insertion.
+**Delivery idempotency:** Check `delivery_logs` for `status='delivered'` before sending email. `messages.status` is derived state updated after successful delivery.
+
+**Scheduled confirmation reliability:** `notification_queue` stores queued confirmation sends with retry/backoff and dedupe via `(message_id, notification_type, recipient_email)` unique key.
 
 **Webhook idempotency:** Query `payments WHERE checkout_session_id=?` without status filter to handle both duplicate webhooks and interrupted transactions.
 
@@ -113,6 +117,7 @@ Single-page app (Vite + Vanilla TypeScript) backed by Supabase.
 - `messages` - Scheduled messages. `delivery_token` (UUID) for secure email links.
 - `payments` - Stripe transactions. `checkout_session_id` for idempotency.
 - `delivery_logs` - Email delivery audit trail. Source of truth for delivery status.
+- `notification_queue` - Queued scheduled-confirmation emails with retry metadata.
 - `delivery_batch_locks` - Prevents concurrent process-delivery runs.
 
 RPC: `update_storage_used(user_id, delta_bytes)` - atomic storage quota updates.
@@ -124,9 +129,10 @@ RPC: `update_storage_used(user_id, delta_bytes)` - atomic storage quota updates.
 3. **Delivery idempotency**: Check delivery_logs before sending email. Never send twice.
 4. **Webhook idempotency**: Query by checkout_session_id without status filter.
 5. **Batch delivery lock**: Only one process-delivery execution at a time.
-6. **Video ownership**: All operations verify path starts with `user.id`.
-7. **Message deletion**: Only pending messages can be deleted (RLS enforced).
-8. **Admin operations**: Edge Functions use service role client to bypass RLS.
+6. **Scheduled confirmation retries**: notification_queue retries until max attempts, then marks failed.
+7. **Video ownership**: All operations verify path starts with `user.id`.
+8. **Message deletion**: Only pending messages can be deleted (RLS enforced).
+9. **Admin operations**: Edge Functions use service role client to bypass RLS.
 
 ## External Service Failure Modes
 
@@ -134,7 +140,7 @@ RPC: `update_storage_used(user_id, delta_bytes)` - atomic storage quota updates.
 |---------|----------------|
 | Stripe | Users cannot upgrade to Pro until service recovers |
 | Resend | Messages remain pending, retried on next cron run |
-| cron-job.org | Manual trigger via Edge Function URL |
+| cron-job.org | Confirmation + delivery jobs can be manually triggered via Edge Function URL |
 | Supabase | Full outage, no fallback |
 
 ## Constraints

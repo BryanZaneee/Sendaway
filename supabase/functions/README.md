@@ -1,6 +1,6 @@
 # Edge Functions
 
-Supabase Edge Functions handle payment processing, scheduled message delivery, and log cleanup.
+Supabase Edge Functions handle payment processing, scheduled confirmations, scheduled message delivery, and log cleanup.
 
 ## Architecture
 
@@ -10,6 +10,7 @@ Supabase Edge Functions handle payment processing, scheduled message delivery, a
 ├─────────────────────────────────────────────────────────────┤
 │  create-checkout    │ Creates Stripe checkout session       │
 │  webhook-stripe     │ Handles payment confirmation          │
+│  process-notifications │ Sends queued scheduled confirmations │
 │  process-delivery   │ Sends due messages via Resend         │
 │  cleanup-logs       │ Deletes old delivery_logs entries     │
 ├─────────────────────────────────────────────────────────────┤
@@ -24,7 +25,7 @@ Supabase Edge Functions handle payment processing, scheduled message delivery, a
 ├─────────────────────────────────────────────────────────────┤
 │  Stripe      │ Payment processing, checkout sessions        │
 │  Resend      │ Transactional email delivery                 │
-│  cron-job.org│ Daily trigger for process-delivery at 8 AM  │
+│  cron-job.org│ Triggers delivery + notification processors  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -36,9 +37,11 @@ Supabase Edge Functions handle payment processing, scheduled message delivery, a
 
 **Message Delivery Flow:**
 1. User submits message form → messages table (status='pending')
-2. Cron triggers process-delivery daily at 8 AM UTC → Query pending messages due today
-3. For each message: Generate signed URL → Send via Resend → Update status='delivered'
-4. Batch lock (delivery_batch_locks) prevents concurrent execution
+2. DB trigger enqueues `scheduled_confirmation` in notification_queue for account owner email
+3. Cron triggers process-notifications every 5 min → sends queued confirmations with retries
+4. Cron triggers process-delivery daily at 8 AM UTC → Query pending messages due today
+5. For each message: Generate signed URL → Send via Resend → Update status='delivered'
+6. Batch lock (delivery_batch_locks) prevents concurrent execution
 
 **Log Cleanup Flow:**
 1. cleanup-logs runs periodically → Deletes delivery_logs WHERE created_at < now() - 90 days
@@ -90,13 +93,19 @@ supabase secrets set APP_URL=https://yourdomain.com
 ### Cron Configuration
 
 1. Create account on cron-job.org
-2. Set up daily job:
+2. Set up daily delivery job:
    - URL: `https://<project-ref>.supabase.co/functions/v1/process-delivery`
    - Schedule: Daily at 8:00 AM UTC
    - HTTP Method: POST
    - Headers: `x-cron-secret: <CRON_SECRET>`, `Content-Type: application/json`
 
-3. Set cron secret:
+3. Set up notifications job:
+   - URL: `https://<project-ref>.supabase.co/functions/v1/process-notifications`
+   - Schedule: Every 5 minutes
+   - HTTP Method: POST
+   - Headers: `x-cron-secret: <CRON_SECRET>`, `Content-Type: application/json`
+
+4. Set cron secret:
    ```bash
    supabase secrets set CRON_SECRET=<random-secure-string>
    ```
@@ -119,19 +128,22 @@ supabase secrets set APP_URL=https://yourdomain.com
 - Stripe webhook verifies signature before processing (security)
 - Only one process-delivery execution can run at a time (delivery_batch_locks enforces this)
 - delivery_logs is source of truth for delivery status. Before sending email, check if delivery_logs has status='delivered' for this message_id. messages.status is derived state.
+- notification_queue is source of truth for scheduled confirmation retries and outcomes.
 - Webhook idempotency: Query WHERE checkout_session_id=? without status filter to handle both duplicate webhooks AND interrupted transactions
-- Cron authentication: process-delivery and cleanup-logs verify x-cron-secret header matches CRON_SECRET environment variable before execution
+- Cron authentication: process-notifications, process-delivery, and cleanup-logs verify x-cron-secret header matches CRON_SECRET environment variable before execution
 - Admin client pattern: Edge Functions use getSupabaseAdmin() from _shared/supabase-admin.ts for operations requiring service role privileges (bypasses RLS)
 
 ## Rate Limits
 
 - Resend free tier: 100 emails/day, 1/second rate limit
+- process-notifications batch size: 30 queued confirmations per run
 - process-delivery batch size: 30 messages per run (respects 60s Edge Function timeout: 45s execution + 15s buffer to prevent hard kill)
 - Sequential email sending with 1000ms delay between calls
 
 ## Tradeoffs
 
 - Daily delivery batch (8 AM UTC) simplifies cron scheduling vs. per-message scheduling precision
+- Queue + retry for scheduled confirmations improves reliability without blocking message creation
 - Batch size of 30 leaves margin for API latency, DB queries, signed URL generation within 60s timeout
 - Unprocessed messages picked up by next cron run or manual trigger
 - checkout_session_id stored in payments table enables reconciliation if webhook fails

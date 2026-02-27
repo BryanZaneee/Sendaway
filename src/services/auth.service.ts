@@ -7,6 +7,14 @@ export interface AuthState {
   profile: Profile | null;
 }
 
+export interface AuthResult {
+  error: string | null;
+}
+
+export interface SignUpResult extends AuthResult {
+  requiresEmailVerification: boolean;
+}
+
 class AuthService {
   private currentUser: User | null = null;
   private currentProfile: Profile | null = null;
@@ -154,8 +162,8 @@ class AuthService {
   /**
    * Sign up with email and password
    */
-  async signUp(email: string, password: string): Promise<{ error: string | null }> {
-    const { error } = await supabase.auth.signUp({
+  async signUp(email: string, password: string): Promise<SignUpResult> {
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -164,22 +172,32 @@ class AuthService {
     });
 
     if (error) {
-      return { error: error.message };
+      return { error: error.message, requiresEmailVerification: false };
     }
 
-    return { error: null };
+    return {
+      error: null,
+      requiresEmailVerification: data.session === null
+    };
   }
 
   /**
    * Sign in with email and password
    */
-  async signIn(email: string, password: string): Promise<{ error: string | null }> {
+  async signIn(email: string, password: string): Promise<AuthResult> {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
 
     if (error) {
+      const isUnconfirmedEmail = /email.*not.*confirm/i.test(error.message);
+      if (isUnconfirmedEmail) {
+        return {
+          error: 'Please confirm your email before signing in. Check your inbox for the confirmation link.'
+        };
+      }
+
       return { error: error.message };
     }
 
@@ -196,7 +214,7 @@ class AuthService {
   /**
    * Send password reset email
    */
-  async resetPassword(email: string): Promise<{ error: string | null }> {
+  async resetPassword(email: string): Promise<AuthResult> {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`
     });
@@ -219,7 +237,7 @@ class AuthService {
   /**
    * Sign in with Google OAuth
    */
-  async signInWithGoogle(): Promise<{ error: string | null }> {
+  async signInWithGoogle(): Promise<AuthResult> {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

@@ -1,4 +1,4 @@
-import { authService } from '../services/auth.service';
+import { authService, type AuthResult, type SignUpResult } from '../services/auth.service';
 import { toast } from './toast';
 
 type AuthMode = 'signin' | 'signup' | 'reset';
@@ -204,36 +204,45 @@ class AuthModal {
       submitBtn.textContent = 'Please wait...';
 
       try {
-        let result: { error: string | null };
-
-        switch (this.mode) {
-          case 'signin':
-            result = await authService.signIn(email, password);
-            break;
-          case 'signup':
-            result = await authService.signUp(email, password);
-            break;
-          case 'reset':
-            result = await authService.resetPassword(email);
-            break;
-        }
-
-        if (result.error) {
-          toast.error(result.error);
-          submitBtn.disabled = false;
-          submitBtn.textContent = originalText;
-          return;
-        }
-
         if (this.mode === 'signup') {
-          toast.success('Check your email to confirm your account!');
-          this.mode = 'signin';
-          this.render();
-        } else if (this.mode === 'reset') {
-          toast.success('Password reset link sent to your email!');
-          this.mode = 'signin';
-          this.render();
+          const result: SignUpResult = await authService.signUp(email, password);
+
+          if (result.error) {
+            toast.error(result.error);
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            return;
+          }
+
+          if (result.requiresEmailVerification) {
+            toast.success('Check your email to confirm your account!');
+            this.mode = 'signin';
+            this.render();
+            return;
+          }
+
+          toast.success('Account created and signed in successfully!');
+          this.hide();
+          this.onSuccessCallback?.();
         } else {
+          const result: AuthResult = this.mode === 'signin'
+            ? await authService.signIn(email, password)
+            : await authService.resetPassword(email);
+
+          if (result.error) {
+            toast.error(result.error);
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            return;
+          }
+
+          if (this.mode === 'reset') {
+            toast.success('Password reset link sent to your email!');
+            this.mode = 'signin';
+            this.render();
+            return;
+          }
+
           toast.success('Signed in successfully!');
           this.hide();
           this.onSuccessCallback?.();

@@ -7,6 +7,7 @@ import {
   DELIVERY_BATCH_SIZE as BATCH_SIZE,
   DELIVERY_TIMEOUT_MS as TIMEOUT_MS,
   DELIVERY_RATE_LIMIT_MS as RATE_LIMIT_DELAY_MS,
+  DELIVERY_MAX_ATTEMPTS,
   VIDEO_SIGNED_URL_EXPIRY_SECONDS,
 } from '../_shared/constants.ts';
 
@@ -305,33 +306,42 @@ async function processMessage(
   message: Message,
   fromEmail: string
 ): Promise<ProcessMessageResult> {
+  let attemptNumber: number | null = null;
+
   try {
     const prep = await prepareDelivery(supabase, message.id);
     if (prep.skip) {
       return { status: 'skipped' };
     }
+    attemptNumber = prep.attemptNumber;
 
     const composed = await composeDelivery(supabase, message);
-    await executeDelivery(supabase, message, composed, prep.attemptNumber, fromEmail);
+    await executeDelivery(supabase, message, composed, attemptNumber, fromEmail);
 
     return { status: 'delivered' };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const isValidationError = error instanceof ValidationError;
+    const exceededMaxAttempts = attemptNumber !== null && attemptNumber >= DELIVERY_MAX_ATTEMPTS;
+    const shouldMarkPermanentlyFailed = isValidationError || exceededMaxAttempts;
 
-    await supabase
-      .from('delivery_logs')
-      .update({
-        status: 'failed',
-        error_message: errorMessage,
-      })
-      .eq('message_id', message.id)
-      .order('created_at', { ascending: false })
-      .limit(1);
+    if (attemptNumber !== null) {
+      await supabase
+        .from('delivery_logs')
+        .update({
+          status: 'failed',
+          error_message: errorMessage,
+        })
+        .eq('message_id', message.id)
+        .eq('attempt_number', attemptNumber);
+    }
 
-    await supabase
-      .from('messages')
-      .update({ status: 'failed' })
-      .eq('id', message.id);
+    if (shouldMarkPermanentlyFailed) {
+      await supabase
+        .from('messages')
+        .update({ status: 'failed' })
+        .eq('id', message.id);
+    }
 
     return { status: 'failed' };
   }

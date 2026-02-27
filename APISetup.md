@@ -14,13 +14,22 @@ This creates a test user (`sendaway.test+user1@gmail.com` / `TestPass123!`) and 
 
 ## 1. Supabase Auth Configuration
 
-- [ ] **Disable email confirmation** (for development)
+- [ ] **Keep email confirmation enabled** (required for non-Google signup verification)
   - Go to [Auth Providers](https://supabase.com/dashboard/project/brxcirhbtgwdevkaeebc/auth/providers)
-  - Under Email, toggle OFF "Confirm email"
+  - Under Email, ensure "Confirm email" is ON
 
 - [ ] **Confirm test user** (if email confirmation stays enabled)
   - Go to [Auth Users](https://supabase.com/dashboard/project/brxcirhbtgwdevkaeebc/auth/users)
   - Find `sendaway.test+user1@gmail.com` → Confirm user
+
+- [ ] **Configure SMTP for Auth emails via Resend**
+  - Go to Auth → [Email Templates](https://supabase.com/dashboard/project/brxcirhbtgwdevkaeebc/auth/templates)
+  - Go to Auth → [SMTP Settings](https://supabase.com/dashboard/project/brxcirhbtgwdevkaeebc/auth/smtp-settings)
+  - Host: `smtp.resend.com`
+  - Port: `465` (SSL) or `587` (TLS)
+  - Username: `resend`
+  - Password: `re_...` (Resend API key)
+  - Sender name/email: your verified Resend sender
 
 ---
 
@@ -68,11 +77,17 @@ Choose one option:
 
 - [ ] **Create account** at [cron-job.org](https://cron-job.org)
 - [ ] **Generate CRON_SECRET**: Run `openssl rand -hex 32`
-- [ ] **Create cron job**
+- [ ] **Create cron job: message delivery**
   - URL: `https://brxcirhbtgwdevkaeebc.supabase.co/functions/v1/process-delivery`
   - Method: POST
-  - Schedule: Daily at 8:00 AM (or preferred time)
-  - Headers: `Authorization: Bearer <CRON_SECRET>`
+  - Schedule: Daily at 8:00 AM UTC
+  - Headers: `x-cron-secret: <CRON_SECRET>`, `Content-Type: application/json`
+
+- [ ] **Create cron job: scheduled confirmations**
+  - URL: `https://brxcirhbtgwdevkaeebc.supabase.co/functions/v1/process-notifications`
+  - Method: POST
+  - Schedule: Every 5 minutes
+  - Headers: `x-cron-secret: <CRON_SECRET>`, `Content-Type: application/json`
 
 ---
 
@@ -102,6 +117,11 @@ To get your **Service Role Key**:
 
 ```bash
 supabase functions deploy --project-ref brxcirhbtgwdevkaeebc
+```
+
+Or deploy explicitly:
+```bash
+supabase functions deploy process-delivery process-notifications cleanup-logs create-checkout webhook-stripe --project-ref brxcirhbtgwdevkaeebc
 ```
 
 ---
@@ -142,8 +162,8 @@ npx tsx scripts/seed-test-data.ts
 ```
 
 **Prerequisites:**
-- [ ] Email confirmation disabled in Supabase Dashboard, OR
-- [ ] Test user manually confirmed in Auth > Users
+- [ ] Test user manually confirmed in Auth > Users, OR
+- [ ] Use Google OAuth for sign-in while testing
 
 ### Running Against Local Supabase
 
@@ -217,5 +237,5 @@ supabase functions list --project-ref brxcirhbtgwdevkaeebc
 |---------|---------|-----------|
 | Stripe | Payments | Test mode free |
 | Resend | Email delivery | 100/day |
-| cron-job.org | Daily trigger | Free |
+| cron-job.org | Triggers delivery + notification processors | Free |
 | Supabase | Database, Auth, Functions | 50k MAU, 500MB |

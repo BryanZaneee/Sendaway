@@ -28,6 +28,7 @@ Singleton service layer for FtrMsg frontend. All services maintain global state 
   - Fetches and caches profile data in memory
   - Provides observer pattern for components (onAuthStateChange)
   - Exposes helper methods: isPro(), hasFreeMessageUsed(), getRemainingStorage()
+  - Returns signup verification state (`requiresEmailVerification`) so UI can guide non-OAuth users
 
 - **message.service.ts**: Message lifecycle with transaction safety
   - Enforces tier restrictions (free users: 1 message, no video)

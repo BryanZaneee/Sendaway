@@ -16,10 +16,12 @@ FtrMsg is a single-page application (Vite + Vanilla TypeScript) backed by Supaba
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │              SUPABASE (Backend as a Service)                │
-│  Database: Messages, profiles, payments, delivery_logs      │
+│  Database: Messages, profiles, payments, delivery_logs,      │
+│            notification_queue                                │
 │  Auth: Email/password authentication                        │
 │  Storage: Video files in 'message-videos' bucket            │
-│  Edge Functions: Stripe checkout, webhooks, message delivery│
+│  Edge Functions: Stripe checkout, webhooks, scheduled notif. │
+│                 and message delivery                         │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -27,7 +29,7 @@ FtrMsg is a single-page application (Vite + Vanilla TypeScript) backed by Supaba
 │                   EXTERNAL SERVICES                         │
 │  Stripe: Payment processing ($9 Pro upgrade)                │
 │  Resend: Transactional email delivery                       │
-│  cron-job.org: Daily trigger at 8 AM UTC                    │
+│  cron-job.org: Triggers confirmations + daily delivery       │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -49,8 +51,11 @@ Supabase doesn't support multi-resource transactions (DB + Storage). Manual comp
 1. **Free message race condition**: If optimistic lock fails after message insertion, delete the just-created message.
 2. **Storage quota failure**: If `update_storage_used` RPC fails after video upload, delete uploaded video via storage API + delete message record. Structured log on double-failure: `{event: 'COMPENSATING_DELETE_FAILED', message_id, video_storage_path, storage_error, delete_error}`
 
-### Daily Batch Delivery
+### Scheduled Notification + Delivery Batches
+- Process-notifications Edge Function runs every 5 minutes for queued scheduled confirmations
+- Notification retries use exponential backoff up to 5 attempts
 - Process-delivery Edge Function triggered daily at 8 AM UTC by cron-job.org
+- Delivery retries continue while `messages.status='pending'` until 5 attempts; permanent failure marks status='failed'
 - Batch size: 30 messages per run (respects 60s Edge Function timeout: 45s execution + 15s buffer to prevent hard kill)
 - Batch lock (`delivery_batch_locks` table) prevents concurrent execution
 - Sequential email sending with 1000ms delay (respects Resend 1/second rate limit)
@@ -65,8 +70,13 @@ Supabase doesn't support multi-resource transactions (DB + Storage). Manual comp
 ### Delivery Idempotency
 - `delivery_logs` is source of truth for delivery status
 - Before sending email, check if `delivery_logs` has `status='delivered'` for this `message_id`
-- `messages.status` is derived state (updated after delivery_logs insertion)
+- `messages.status` is derived state (updated after successful delivery)
 - Prevents duplicate emails on cron retry or manual trigger
+
+### Scheduled Confirmation Reliability
+- `notification_queue` stores scheduled-confirmation send attempts and state
+- `messages` insert trigger enqueues one confirmation for the account owner email
+- Unique constraint `(message_id, notification_type, recipient_email)` prevents duplicates
 
 ### Webhook Idempotency
 - Stripe sends duplicate webhooks on network retry
@@ -80,9 +90,10 @@ Supabase doesn't support multi-resource transactions (DB + Storage). Manual comp
 3. **Delivery idempotency**: Check delivery_logs before sending email. Never send twice.
 4. **Webhook idempotency**: Query by checkout_session_id without status filter.
 5. **Batch delivery lock**: Only one process-delivery execution at a time (delivery_batch_locks).
-6. **Video ownership**: All operations verify path starts with user.id.
-7. **Message deletion**: Only pending messages can be deleted (RLS enforced).
-8. **Admin operations**: Edge Functions use service role client from _shared/supabase-admin.ts to bypass RLS.
+6. **Scheduled confirmation retries**: notification_queue retries up to max attempts before marking failed.
+7. **Video ownership**: All operations verify path starts with user.id.
+8. **Message deletion**: Only pending messages can be deleted (RLS enforced).
+9. **Admin operations**: Edge Functions use service role client from _shared/supabase-admin.ts to bypass RLS.
 
 ## Tradeoffs
 
@@ -111,7 +122,7 @@ Supabase doesn't support multi-resource transactions (DB + Storage). Manual comp
 |---------|---------|--------------|
 | Stripe | Payment processing | Users cannot upgrade to Pro until service recovers |
 | Resend | Email delivery | Messages remain pending, retried on next cron run |
-| cron-job.org | Daily delivery trigger | Manual trigger via Edge Function URL |
+| cron-job.org | Scheduled confirmation + delivery triggers | Manual trigger via Edge Function URL |
 | Supabase | Database, auth, storage, functions | Full outage, no fallback |
 
 ## Scaling Considerations
