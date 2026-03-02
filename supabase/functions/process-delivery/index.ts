@@ -4,6 +4,11 @@ import { Resend } from 'https://esm.sh/resend@2.1.0';
 import { verifyCronSecret } from '../_shared/cron-auth.ts';
 import { getSupabaseAdmin } from '../_shared/supabase-admin.ts';
 import {
+  buildDeliveryEmail,
+  ValidationError,
+} from '../_shared/email-utils.ts';
+import type { DeliveryMessage } from '../_shared/email-utils.ts';
+import {
   DELIVERY_BATCH_SIZE as BATCH_SIZE,
   DELIVERY_TIMEOUT_MS as TIMEOUT_MS,
   DELIVERY_RATE_LIMIT_MS as RATE_LIMIT_DELAY_MS,
@@ -13,120 +18,11 @@ import {
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY')!);
 
-class ValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ValidationError';
-  }
-}
-
-interface Message {
-  id: string;
-  user_id: string;
-  message_text: string;
-  video_storage_path: string | null;
-  delivery_email: string;
-  scheduled_date: string;
-  delivery_token: string;
-}
-
 interface BatchResult {
   processed: number;
   delivered: number;
   failed: number;
   stoppedEarly: boolean;
-}
-
-/**
- * Validates email format using a reasonable pattern.
- * Checks for: non-empty local part, @, domain with at least one dot, valid TLD.
- */
-function validateEmail(email: string): boolean {
-  if (!email) return false;
-  // Pattern: local@domain.tld where local and domain parts are non-empty
-  // and TLD is 2-10 characters (covers most valid TLDs)
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,10}$/;
-  return emailPattern.test(email);
-}
-
-/**
- * Build neo-brutalist HTML email.
- * Throws ValidationError if delivery_email lacks '@' symbol.
- * Null/undefined message_text defaults to empty string.
- */
-function buildDeliveryEmail(
-  message: Message,
-  videoUrl?: string | null
-): { subject: string; html: string } {
-  if (!validateEmail(message.delivery_email)) {
-    throw new ValidationError(`Invalid delivery email: ${message.delivery_email}`);
-  }
-
-  const messageText = message.message_text ?? '';
-  const appUrl = Deno.env.get('APP_URL') || 'https://ftrmsg.com';
-
-  const subject = 'Your FtrMsg message has arrived!';
-
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your FtrMsg Message</title>
-</head>
-<body style="margin: 0; padding: 0; background-color: #FFFDF7; font-family: 'Helvetica Neue', Arial, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #FFFDF7; padding: 40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: #FFFFFF; border: 3px solid #000000; border-radius: 8px; box-shadow: 8px 8px 0px 0px #000000;">
-          <!-- Header -->
-          <tr>
-            <td style="background: #FDE68A; padding: 30px; border-bottom: 3px solid #000000; border-radius: 5px 5px 0 0;">
-              <h1 style="margin: 0; font-size: 28px; font-weight: 800; color: #000000; text-transform: uppercase;">
-                FTRMSG
-              </h1>
-              <p style="margin: 10px 0 0 0; font-size: 16px; color: #333333;">
-                Your message from the past has arrived!
-              </p>
-            </td>
-          </tr>
-          <!-- Content -->
-          <tr>
-            <td style="padding: 30px;">
-              <div style="background: #F9F9F9; border: 2px solid #000000; border-radius: 8px; padding: 25px; margin-bottom: 20px;">
-                <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #000000; white-space: pre-wrap;">${messageText}</p>
-              </div>
-              ${videoUrl ? `
-              <div style="background: #BAE6FD; border: 2px solid #000000; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: center;">
-                <p style="margin: 0 0 15px 0; font-weight: 700; color: #000000;">Video Message Attached</p>
-                <a href="${videoUrl}" style="display: inline-block; background: #BBF7D0; color: #000000; text-decoration: none; padding: 12px 24px; border: 2px solid #000000; border-radius: 8px; font-weight: 700; box-shadow: 4px 4px 0px 0px #000000;">
-                  Watch Video
-                </a>
-                <p style="margin: 15px 0 0 0; font-size: 12px; color: #555555;">
-                  Video link expires in 7 days
-                </p>
-              </div>
-              ` : ''}
-            </td>
-          </tr>
-          <!-- Footer -->
-          <tr>
-            <td style="background: #F5F5F5; padding: 20px 30px; border-top: 2px solid #000000; border-radius: 0 0 5px 5px;">
-              <p style="margin: 0; font-size: 14px; color: #555555; text-align: center;">
-                Sent with love from your past self via <a href="${appUrl}" style="color: #000000; font-weight: 700;">FtrMsg</a>
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-  `;
-
-  return { subject, html };
 }
 
 /**
@@ -164,7 +60,7 @@ interface SendMessageResult {
  * Returns success status and email provider ID on success, or error message on failure.
  */
 async function sendMessage(
-  message: Message,
+  message: DeliveryMessage,
   subject: string,
   html: string,
   fromEmail: string
@@ -237,7 +133,7 @@ interface ComposedEmail {
  */
 async function composeDelivery(
   supabase: ReturnType<typeof createClient>,
-  message: Message
+  message: DeliveryMessage
 ): Promise<ComposedEmail> {
   let videoUrl: string | null = null;
   if (message.video_storage_path) {
@@ -247,7 +143,8 @@ async function composeDelivery(
     videoUrl = signedUrlData?.signedUrl ?? null;
   }
 
-  return buildDeliveryEmail(message, videoUrl);
+  const appUrl = Deno.env.get('APP_URL') || 'https://ftrmsg.com';
+  return buildDeliveryEmail(message, videoUrl, appUrl);
 }
 
 /**
@@ -256,7 +153,7 @@ async function composeDelivery(
  */
 async function executeDelivery(
   supabase: ReturnType<typeof createClient>,
-  message: Message,
+  message: DeliveryMessage,
   email: ComposedEmail,
   attemptNumber: number,
   fromEmail: string
@@ -303,7 +200,7 @@ interface ProcessMessageResult {
  */
 async function processMessage(
   supabase: ReturnType<typeof createClient>,
-  message: Message,
+  message: DeliveryMessage,
   fromEmail: string
 ): Promise<ProcessMessageResult> {
   let attemptNumber: number | null = null;
@@ -353,7 +250,7 @@ async function processMessage(
  */
 async function processMessageBatch(
   supabase: ReturnType<typeof createClient>,
-  messages: Message[],
+  messages: DeliveryMessage[],
   startTime: number
 ): Promise<BatchResult> {
   const result: BatchResult = {

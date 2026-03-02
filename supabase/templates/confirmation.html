@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirm Your Account</title>
+</head>
+<body style="margin:0;padding:0;background:#FFFDF7;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;background:#FFFDF7;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border:3px solid #000;border-radius:8px;box-shadow:8px 8px 0 0 #000;">
+          <!-- Header -->
+          <tr>
+            <td style="padding:28px;background:#FDE68A;border-bottom:3px solid #000;border-radius:5px 5px 0 0;">
+              <h1 style="margin:0;font-size:28px;font-weight:800;color:#000;text-transform:uppercase;">FTRMSG</h1>
+              <p style="margin:10px 0 0 0;color:#333;font-size:16px;">Welcome aboard.</p>
+            </td>
+          </tr>
+          <!-- Content -->
+          <tr>
+            <td style="padding:28px;">
+              <p style="margin:0 0 16px 0;font-size:16px;color:#000;line-height:1.6;">
+                You're one click away from sending messages to the future.
+              </p>
+              <p style="margin:0 0 24px 0;font-size:16px;color:#000;line-height:1.6;">
+                Confirm your email to get started:
+              </p>
+              <div style="text-align:center;margin:0 0 24px 0;">
+                <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#BBF7D0;color:#000;text-decoration:none;padding:14px 32px;border:3px solid #000;border-radius:8px;font-weight:800;font-size:16px;box-shadow:4px 4px 0 0 #000;text-transform:uppercase;">
+                  Confirm Email
+                </a>
+              </div>
+              <p style="margin:0;font-size:13px;color:#666;line-height:1.5;">
+                If you didn't create an account, you can safely ignore this email.
+              </p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding:20px 28px;background:#F5F5F5;border-top:2px solid #000;border-radius:0 0 5px 5px;text-align:center;">
+              <p style="margin:0;font-size:13px;color:#555;">
+                <a href="{{ .SiteURL }}" style="color:#000;font-weight:700;">FtrMsg</a> — Send messages to the future.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

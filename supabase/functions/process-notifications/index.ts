@@ -4,6 +4,14 @@ import { Resend } from 'https://esm.sh/resend@2.1.0';
 import { verifyCronSecret } from '../_shared/cron-auth.ts';
 import { getSupabaseAdmin } from '../_shared/supabase-admin.ts';
 import {
+  validateEmail,
+  getMessage,
+  buildScheduledConfirmationEmail,
+  getRetryTime,
+  ValidationError,
+} from '../_shared/email-utils.ts';
+import type { NotificationRow } from '../_shared/email-utils.ts';
+import {
   NOTIFICATION_BATCH_SIZE as BATCH_SIZE,
   NOTIFICATION_TIMEOUT_MS as TIMEOUT_MS,
   NOTIFICATION_RATE_LIMIT_MS as RATE_LIMIT_DELAY_MS,
@@ -11,30 +19,6 @@ import {
 } from '../_shared/constants.ts';
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY')!);
-
-class ValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ValidationError';
-  }
-}
-
-interface MessageSummary {
-  id: string;
-  message_text: string;
-  scheduled_date: string;
-  delivery_email: string;
-}
-
-interface NotificationRow {
-  id: string;
-  message_id: string;
-  notification_type: 'scheduled_confirmation';
-  recipient_email: string;
-  attempt_count: number;
-  max_attempts: number;
-  messages: MessageSummary | MessageSummary[] | null;
-}
 
 interface BatchResult {
   processed: number;
@@ -54,103 +38,8 @@ interface SendResult {
   error?: string;
 }
 
-function validateEmail(email: string): boolean {
-  if (!email) return false;
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,10}$/;
-  return emailPattern.test(email);
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-function formatScheduledDate(dateString: string): string {
-  const date = new Date(`${dateString}T00:00:00.000Z`);
-  if (Number.isNaN(date.getTime())) {
-    return dateString;
-  }
-
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(date);
-}
-
-function buildScheduledConfirmationEmail(message: MessageSummary): { subject: string; html: string } {
-  const subject = 'Your FtrMsg message has been scheduled!';
-  const appUrl = Deno.env.get('APP_URL') || 'https://ftrmsg.com';
-  const scheduledDate = formatScheduledDate(message.scheduled_date);
-  const preview = escapeHtml(message.message_text.slice(0, 240));
-
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Message Scheduled</title>
-</head>
-<body style="margin:0;padding:0;background:#FFFDF7;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;background:#FFFDF7;">
-    <tr>
-      <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border:3px solid #000;border-radius:8px;box-shadow:8px 8px 0 0 #000;">
-          <tr>
-            <td style="padding:28px;background:#BBF7D0;border-bottom:3px solid #000;border-radius:5px 5px 0 0;">
-              <h1 style="margin:0;font-size:28px;font-weight:800;color:#000;text-transform:uppercase;">FTRMSG</h1>
-              <p style="margin:10px 0 0 0;color:#333;font-size:16px;">Your message is safely scheduled.</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:28px;">
-              <p style="margin:0 0 14px 0;font-size:16px;color:#000;">Delivery date: <strong>${scheduledDate}</strong></p>
-              <p style="margin:0 0 14px 0;font-size:16px;color:#000;">Delivery destination: <strong>${escapeHtml(message.delivery_email)}</strong></p>
-              <div style="border:2px solid #000;border-radius:8px;background:#F9F9F9;padding:18px;">
-                <p style="margin:0;font-size:14px;line-height:1.5;color:#111;white-space:pre-wrap;">${preview}${message.message_text.length > 240 ? '...' : ''}</p>
-              </div>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:20px 28px;background:#F5F5F5;border-top:2px solid #000;border-radius:0 0 5px 5px;text-align:center;">
-              <a href="${appUrl}" style="color:#000;font-weight:700;">Manage your scheduled messages</a>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-  `;
-
-  return { subject, html };
-}
-
-function getMessage(notification: NotificationRow): MessageSummary {
-  if (Array.isArray(notification.messages)) {
-    const first = notification.messages[0];
-    if (first) return first;
-  } else if (notification.messages) {
-    return notification.messages;
-  }
-
-  throw new Error(`Missing message relation for notification ${notification.id}`);
-}
-
 function delayForRateLimit(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_DELAY_MS));
-}
-
-function getRetryTime(attemptCount: number): string {
-  const backoffMinutes = Math.min(5 * (2 ** Math.max(attemptCount - 1, 0)), 720);
-  return new Date(Date.now() + backoffMinutes * 60_000).toISOString();
 }
 
 async function sendEmail(
@@ -220,6 +109,7 @@ async function processNotification(
   supabase: ReturnType<typeof createClient>,
   notification: NotificationRow,
   fromEmail: string,
+  appUrl: string,
 ): Promise<ProcessResult> {
   try {
     if (!validateEmail(notification.recipient_email)) {
@@ -227,7 +117,7 @@ async function processNotification(
     }
 
     const message = getMessage(notification);
-    const composed = buildScheduledConfirmationEmail(message);
+    const composed = buildScheduledConfirmationEmail(message, appUrl);
     const sendResult = await sendEmail(notification.recipient_email, composed.subject, composed.html, fromEmail);
 
     if (!sendResult.success) {
@@ -262,6 +152,7 @@ async function processBatch(
   };
 
   const fromEmail = Deno.env.get('FROM_EMAIL') || 'FtrMsg <noreply@ftrmsg.com>';
+  const appUrl = Deno.env.get('APP_URL') || 'https://ftrmsg.com';
 
   for (let i = 0; i < notifications.length; i++) {
     if (Date.now() - startTime > TIMEOUT_MS) {
@@ -272,7 +163,7 @@ async function processBatch(
     const notification = notifications[i];
     result.processed++;
 
-    const notificationResult = await processNotification(supabase, notification, fromEmail);
+    const notificationResult = await processNotification(supabase, notification, fromEmail, appUrl);
 
     if (notificationResult.status === 'delivered') {
       result.delivered++;
