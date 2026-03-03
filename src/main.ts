@@ -1,36 +1,70 @@
-import { authService } from './services/auth.service';
-import { formHandler } from './components/form-handler';
-import { messagesDashboard } from './components/messages-dashboard';
-import { toast } from './components/toast';
-import { initScrollAnimations } from './utils/scroll-animations';
-
 let dropdownCloseHandler: ((e: MouseEvent) => void) | null = null;
 
 // Initialize the application
 function init(): void {
-  // Initialize form handler
-  formHandler.init();
-
-  // Initialize messages dashboard
-  messagesDashboard.init();
-
-  // Update UI based on auth state
-  authService.onAuthStateChange((state) => {
-    const user = state.user;
-    const displayName = user
-      ? user.user_metadata?.full_name || user.user_metadata?.name || user.email || 'Account'
-      : '';
-    const email = user?.email || '';
-    updateAuthUI(user !== null, state.profile?.tier === 'pro', displayName, email);
-  });
-
-  // Check for success/cancel from Stripe redirect
-  handleStripeRedirect();
-
-  // Set up scroll animations
+  // Set up scroll animations FIRST — no external dependencies
   setupAnimations();
 
+  // Bind the Sign In button from HTML immediately
+  bindSignInButton();
+
+  // Load Supabase-dependent services asynchronously
+  initServices();
+
   console.log('FtrMsg initialized');
+}
+
+/**
+ * Bind click handler to the Sign In button rendered in HTML
+ */
+function bindSignInButton(): void {
+  const signInBtn = document.getElementById('signInBtn');
+  signInBtn?.addEventListener('click', () => {
+    import('./components/auth-modal').then(({ authModal }) => {
+      authModal.show();
+    });
+  });
+}
+
+/**
+ * Initialize Supabase-dependent services (auth, form, dashboard, payments)
+ * Wrapped in async to prevent failures from blocking animations/UI
+ */
+async function initServices(): Promise<void> {
+  try {
+    const [
+      { authService },
+      { formHandler },
+      { messagesDashboard },
+      { toast },
+    ] = await Promise.all([
+      import('./services/auth.service'),
+      import('./components/form-handler'),
+      import('./components/messages-dashboard'),
+      import('./components/toast'),
+    ]);
+
+    // Initialize form handler
+    formHandler.init();
+
+    // Initialize messages dashboard
+    messagesDashboard.init();
+
+    // Update UI based on auth state
+    authService.onAuthStateChange((state) => {
+      const user = state.user;
+      const displayName = user
+        ? user.user_metadata?.full_name || user.user_metadata?.name || user.email || 'Account'
+        : '';
+      const email = user?.email || '';
+      updateAuthUI(user !== null, state.profile?.tier === 'pro', displayName, email);
+    });
+
+    // Check for success/cancel from Stripe redirect
+    handleStripeRedirect(toast);
+  } catch (err) {
+    console.warn('Failed to initialize services:', err);
+  }
 }
 
 /**
@@ -134,8 +168,75 @@ function setupAnimations(): void {
     counterEl.classList.add('animate-on-scroll');
   }
 
-  // Initialize the observer
-  initScrollAnimations();
+  // Initialize scroll animations
+  if (prefersReducedMotion) {
+    document.querySelectorAll('.animate-on-scroll').forEach((el) => {
+      (el as HTMLElement).style.opacity = '1';
+    });
+    return;
+  }
+
+  const ANIMATION_MAP: Record<string, string> = {
+    card: 'animate-card',
+    'slide-left': 'animate-slide-left',
+    'slide-right': 'animate-slide-right',
+    'number-pop': 'animate-number-pop',
+    'hero-text': 'animate-hero-text',
+  };
+
+  function animateCounter(el: HTMLElement): void {
+    const target = parseInt(el.dataset.counter!, 10);
+    const start = performance.now();
+    const duration = 1500;
+    function update(now: number): void {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(eased * target).toLocaleString();
+      if (progress < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+  }
+
+  function revealElement(el: HTMLElement): void {
+    const animationType = el.dataset.animation;
+    if (animationType && ANIMATION_MAP[animationType]) {
+      el.classList.add(ANIMATION_MAP[animationType]);
+    }
+    if (el.dataset.counter) {
+      animateCounter(el);
+    }
+    el.dataset.revealed = 'true';
+  }
+
+  // Scroll listener that checks element visibility on each frame
+  function checkVisibility(): void {
+    const viewportBottom = window.scrollY + window.innerHeight - 60;
+
+    document.querySelectorAll('.animate-on-scroll:not([data-revealed])').forEach((el) => {
+      const rect = el.getBoundingClientRect();
+      const elTop = rect.top + window.scrollY;
+
+      if (elTop < viewportBottom && rect.bottom > 0) {
+        revealElement(el as HTMLElement);
+      }
+    });
+  }
+
+  // Check on scroll with requestAnimationFrame throttle
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        checkVisibility();
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+
+  // Initial check for elements already in viewport
+  requestAnimationFrame(checkVisibility);
 }
 
 /**
@@ -235,6 +336,8 @@ function updateAuthUI(isLoggedIn: boolean, isPro: boolean, displayName: string, 
   }
 
   dropdownSignOutBtn?.addEventListener('click', async () => {
+    const { authService } = await import('./services/auth.service');
+    const { toast } = await import('./components/toast');
     await authService.signOut();
     toast.info('Signed out');
   });
@@ -257,7 +360,7 @@ function updateAuthUI(isLoggedIn: boolean, isPro: boolean, displayName: string, 
 /**
  * Handle redirect from Stripe checkout
  */
-function handleStripeRedirect(): void {
+function handleStripeRedirect(toast: { success: (msg: string) => void; info: (msg: string) => void }): void {
   const urlParams = new URLSearchParams(window.location.search);
 
   if (urlParams.has('success')) {
@@ -265,7 +368,9 @@ function handleStripeRedirect(): void {
     // Clean up URL
     window.history.replaceState({}, document.title, window.location.pathname);
     // Refresh profile to get updated tier
-    authService.refreshProfile();
+    import('./services/auth.service').then(({ authService }) => {
+      authService.refreshProfile();
+    });
   }
 
   if (urlParams.has('canceled')) {
