@@ -210,6 +210,8 @@
             background: none;
             box-shadow: none;
             color: var(--text-primary);
+            text-decoration: none;
+            cursor: pointer;
             background-image: linear-gradient(135deg, var(--pastel-pink), var(--pastel-yellow));
             background-position: bottom;
             background-size: 100% 35%;
@@ -1342,6 +1344,7 @@
             }
         }
     </style>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
@@ -1358,7 +1361,7 @@
 
     <header>
         <div class="container nav-inner">
-            <div class="logo">FTRMSG</div>
+            <a href="#create" class="logo" aria-label="Go to home">FTRMSG</a>
             <nav class="nav-links" id="navLinks">
                 <a href="#pricingSection">Pricing</a>
                 <a href="#faqSection">FAQ</a>

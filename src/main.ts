@@ -22,6 +22,8 @@ function bindSignInButton(): void {
   signInBtn?.addEventListener('click', () => {
     import('./components/auth-modal').then(({ authModal }) => {
       authModal.show();
+    }).catch((err) => {
+      console.error('Failed to load auth modal:', err);
     });
   });
 }

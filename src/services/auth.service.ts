@@ -235,14 +235,12 @@ class AuthService {
   }
 
   /**
-   * Sign in with Google OAuth
+   * Sign in with Google using an ID token from Google Identity Services
    */
-  async signInWithGoogle(): Promise<AuthResult> {
-    const { error } = await supabase.auth.signInWithOAuth({
+  async signInWithGoogleIdToken(idToken: string): Promise<AuthResult> {
+    const { error } = await supabase.auth.signInWithIdToken({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/`
-      }
+      token: idToken,
     });
 
     if (error) {
