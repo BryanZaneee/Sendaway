@@ -80,7 +80,7 @@ class PlanModal {
         </p>
 
         ${this.data?.hasVideo ? `
-          <p style="background: var(--pastel-blue); border: 2px solid black; padding: 10px; margin-bottom: 20px;">
+          <p style="background: linear-gradient(135deg, var(--pastel-blue), rgba(196, 215, 224, 0.3)); border: 1px solid rgba(90, 80, 100, 0.15); border-radius: 12px; padding: 10px; margin-bottom: 20px;">
             Video attachment included
           </p>
         ` : ''}
@@ -103,7 +103,7 @@ class PlanModal {
           You've already used your free message. Upgrade to Pro for unlimited messages${this.data?.hasVideo ? ' and video support' : ''}.
         </p>
 
-        <button class="btn" id="goProBtn" style="margin-bottom: 10px; background: var(--pastel-pink);">
+        <button class="btn" id="goProBtn" style="margin-bottom: 10px; background: linear-gradient(135deg, var(--pastel-pink), var(--pastel-purple));">
           Go Pro - $9 One-Time
         </button>
         <button class="btn btn-outline" id="deleteExistingBtn" style="margin-bottom: 10px;">
@@ -124,7 +124,7 @@ class PlanModal {
         <h2>Almost There!</h2>
         <p style="margin-bottom: 25px;">Choose a plan to send your message.</p>
 
-        <button class="btn" id="goProBtn" style="margin-bottom: 15px; background: var(--pastel-pink);">
+        <button class="btn" id="goProBtn" style="margin-bottom: 15px; background: linear-gradient(135deg, var(--pastel-pink), var(--pastel-purple));">
           Go Pro ($9) - Video + Unlimited Messages
         </button>
 

@@ -11,7 +11,8 @@
     "supabase:gen-types": "supabase gen types typescript --local > src/types/database.ts",
     "supabase:deploy": "supabase functions deploy",
     "test": "vitest run",
-    "test:integration": "vitest run --config vitest.integration.config.ts"
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "deploy": "tsc && vite build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

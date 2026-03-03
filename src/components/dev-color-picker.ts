@@ -11,14 +11,14 @@ interface ColorConfig {
 }
 
 const COLOR_CONFIGS: ColorConfig[] = [
-  { name: 'Sky Blue', variable: '--pastel-blue', defaultValue: '#BAE6FD' },
-  { name: 'Soft Pink', variable: '--pastel-pink', defaultValue: '#FECDD3' },
-  { name: 'Mint Green', variable: '--pastel-green', defaultValue: '#BBF7D0' },
-  { name: 'Lemon Yellow', variable: '--pastel-yellow', defaultValue: '#FDE68A' },
-  { name: 'Background', variable: '--bg-color', defaultValue: '#FFFDF7' },
-  { name: 'Card BG', variable: '--card-bg', defaultValue: '#FFFFFF' },
-  { name: 'Hero BG', variable: '--hero-bg', defaultValue: '#F5C2C2' },
-  { name: 'FAQ BG', variable: '--faq-bg', defaultValue: '#C2F5D4' },
+  { name: 'Cerulean Wash', variable: '--pastel-blue', defaultValue: '#C4D7E0' },
+  { name: 'Rose Wash', variable: '--pastel-pink', defaultValue: '#E8C4C8' },
+  { name: 'Sap Green', variable: '--pastel-green', defaultValue: '#C2D4BC' },
+  { name: 'Ochre Wash', variable: '--pastel-yellow', defaultValue: '#E8DDB5' },
+  { name: 'Mauve Wash', variable: '--pastel-purple', defaultValue: '#D4C7E0' },
+  { name: 'Parchment', variable: '--bg-color', defaultValue: '#FAF6F0' },
+  { name: 'Hero BG', variable: '--hero-bg', defaultValue: '#F2E4E0' },
+  { name: 'FAQ BG', variable: '--faq-bg', defaultValue: '#E4EDE0' },
 ];
 
 const STORAGE_KEY = 'ftrmsg-dev-colors';
@@ -138,7 +138,7 @@ class DevColorPicker {
       bottom: 20px;
       right: 20px;
       z-index: 99999;
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: 'Lora', serif;
       width: 260px;
     `;
 
@@ -147,10 +147,11 @@ class DevColorPicker {
     styleEl.id = 'dev-color-picker-styles';
     styleEl.textContent = `
       #dev-color-picker {
-        background: var(--pastel-yellow, #FDE68A);
-        border: 3px solid black;
-        border-radius: 8px;
-        box-shadow: 6px 6px 0 black;
+        background: rgba(250, 246, 240, 0.95);
+        border: 1px solid rgba(90, 80, 100, 0.15);
+        border-radius: 16px;
+        box-shadow: 0 8px 30px rgba(90, 80, 100, 0.12);
+        backdrop-filter: blur(20px);
         overflow: hidden;
       }
 
@@ -167,25 +168,25 @@ class DevColorPicker {
         justify-content: space-between;
         align-items: center;
         padding: 10px 12px;
-        border-bottom: 2px solid black;
-        background: white;
+        border-bottom: 1px solid rgba(90, 80, 100, 0.1);
+        background: rgba(255, 255, 255, 0.5);
         cursor: move;
       }
 
       .dcp-title {
-        font-weight: 700;
-        font-size: 0.85rem;
-        text-transform: uppercase;
+        font-family: 'Caveat', cursive;
+        font-weight: 600;
+        font-size: 1rem;
       }
 
       .dcp-toggle {
-        background: var(--pastel-blue, #BAE6FD);
-        border: 2px solid black;
-        border-radius: 4px;
+        background: rgba(196, 215, 224, 0.4);
+        border: 1px solid rgba(90, 80, 100, 0.15);
+        border-radius: 50%;
         width: 24px;
         height: 24px;
         cursor: pointer;
-        font-weight: 700;
+        font-weight: 600;
         font-size: 14px;
         line-height: 1;
         display: flex;
@@ -194,7 +195,7 @@ class DevColorPicker {
       }
 
       .dcp-toggle:hover {
-        background: var(--pastel-pink, #FECDD3);
+        background: rgba(232, 196, 200, 0.4);
       }
 
       .dcp-body {
@@ -207,10 +208,11 @@ class DevColorPicker {
 
       .dcp-label {
         display: block;
-        font-size: 0.75rem;
+        font-family: 'Caveat', cursive;
+        font-size: 0.9rem;
         font-weight: 600;
         margin-bottom: 4px;
-        text-transform: uppercase;
+        color: #5B5468;
       }
 
       .dcp-input-group {
@@ -222,8 +224,8 @@ class DevColorPicker {
         width: 40px;
         height: 32px;
         padding: 0;
-        border: 2px solid black;
-        border-radius: 4px;
+        border: 1px solid rgba(90, 80, 100, 0.15);
+        border-radius: 8px;
         cursor: pointer;
         background: none;
       }
@@ -242,14 +244,15 @@ class DevColorPicker {
         padding: 6px 8px;
         font-family: monospace;
         font-size: 0.85rem;
-        border: 2px solid black;
-        border-radius: 4px;
+        border: 1px solid rgba(90, 80, 100, 0.15);
+        border-radius: 8px;
         text-transform: uppercase;
       }
 
       .dcp-hex-input:focus {
         outline: none;
-        box-shadow: 2px 2px 0 var(--pastel-blue, #BAE6FD);
+        box-shadow: 0 0 0 3px rgba(196, 215, 224, 0.3);
+        border-color: rgba(196, 215, 224, 0.6);
       }
 
       .dcp-actions {
@@ -261,33 +264,32 @@ class DevColorPicker {
       .dcp-btn {
         flex: 1;
         padding: 8px 12px;
-        font-family: inherit;
-        font-weight: 700;
+        font-family: 'Lora', serif;
+        font-weight: 600;
         font-size: 0.75rem;
-        text-transform: uppercase;
-        border: 2px solid black;
-        border-radius: 4px;
+        border: 1px solid rgba(90, 80, 100, 0.15);
+        border-radius: 50px;
         cursor: pointer;
-        transition: all 0.15s ease;
-        box-shadow: 2px 2px 0 black;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(90, 80, 100, 0.06);
       }
 
       .dcp-btn:hover {
-        transform: translate(1px, 1px);
-        box-shadow: 1px 1px 0 black;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(90, 80, 100, 0.1);
       }
 
       .dcp-btn:active {
-        transform: translate(2px, 2px);
-        box-shadow: none;
+        transform: translateY(0);
+        box-shadow: 0 1px 4px rgba(90, 80, 100, 0.06);
       }
 
       .dcp-reset {
-        background: var(--pastel-pink, #FECDD3);
+        background: linear-gradient(135deg, rgba(232, 196, 200, 0.4), rgba(232, 196, 200, 0.2));
       }
 
       .dcp-copy {
-        background: var(--pastel-green, #BBF7D0);
+        background: linear-gradient(135deg, rgba(194, 212, 188, 0.4), rgba(194, 212, 188, 0.2));
       }
     `;
     document.head.appendChild(styleEl);

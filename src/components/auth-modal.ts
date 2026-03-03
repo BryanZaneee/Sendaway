@@ -72,7 +72,7 @@ class AuthModal {
     return `
       <div class="modal" style="max-width: 450px;">
         <h2>${titles[this.mode]}</h2>
-        <p style="margin-bottom: 25px; color: #555;">
+        <p style="margin-bottom: 25px; color: #8A8494;">
           ${this.mode === 'reset'
             ? "Enter your email and we'll send you a reset link."
             : this.mode === 'signup'
@@ -128,18 +128,18 @@ class AuthModal {
       case 'signin':
         return `
           <span>Don't have an account? </span>
-          <a href="#" id="switchToSignup" style="color: black; font-weight: 700;">Sign up</a>
+          <a href="#" id="switchToSignup" style="color: #1A1721; font-weight: 600;">Sign up</a>
           <br>
-          <a href="#" id="switchToReset" style="color: #555; font-size: 0.85rem;">Forgot password?</a>
+          <a href="#" id="switchToReset" style="color: #8A8494; font-size: 0.85rem;">Forgot password?</a>
         `;
       case 'signup':
         return `
           <span>Already have an account? </span>
-          <a href="#" id="switchToSignin" style="color: black; font-weight: 700;">Sign in</a>
+          <a href="#" id="switchToSignin" style="color: #1A1721; font-weight: 600;">Sign in</a>
         `;
       case 'reset':
         return `
-          <a href="#" id="switchToSignin" style="color: black; font-weight: 700;">Back to sign in</a>
+          <a href="#" id="switchToSignin" style="color: #1A1721; font-weight: 600;">Back to sign in</a>
         `;
     }
   }

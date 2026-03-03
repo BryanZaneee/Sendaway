@@ -33,11 +33,11 @@ class ToastManager {
   private getBackgroundColor(type: ToastType): string {
     switch (type) {
       case 'success':
-        return 'var(--pastel-green, #BBF7D0)';
+        return 'linear-gradient(135deg, var(--pastel-green, #C2D4BC), rgba(194, 212, 188, 0.7))';
       case 'error':
-        return 'var(--pastel-pink, #FECDD3)';
+        return 'linear-gradient(135deg, var(--pastel-pink, #E8C4C8), rgba(232, 196, 200, 0.7))';
       case 'info':
-        return 'var(--pastel-blue, #BAE6FD)';
+        return 'linear-gradient(135deg, var(--pastel-blue, #C4D7E0), rgba(196, 215, 224, 0.7))';
     }
   }
 
@@ -52,13 +52,15 @@ class ToastManager {
     toastEl.id = `toast-${id}`;
     toastEl.style.cssText = `
       background: ${this.getBackgroundColor(type)};
-      border: 3px solid black;
-      border-radius: 8px;
+      border: 1px solid rgba(90, 80, 100, 0.15);
+      border-radius: 16px;
       padding: 15px 20px;
-      box-shadow: 4px 4px 0 black;
-      font-family: 'Space Grotesk', sans-serif;
+      box-shadow: 0 4px 20px rgba(90, 80, 100, 0.1);
+      backdrop-filter: blur(12px);
+      font-family: 'Lora', serif;
       font-weight: 600;
-      animation: slideIn 0.3s ease;
+      color: #1A1721;
+      animation: toastFadeIn 0.4s ease;
       cursor: pointer;
     `;
     toastEl.textContent = message;
@@ -77,7 +79,7 @@ class ToastManager {
   dismiss(id: string): void {
     const toastEl = document.getElementById(`toast-${id}`);
     if (toastEl) {
-      toastEl.style.animation = 'slideOut 0.3s ease';
+      toastEl.style.animation = 'toastFadeOut 0.4s ease';
       setTimeout(() => {
         toastEl.remove();
         this.toasts = this.toasts.filter(t => t.id !== id);
@@ -101,24 +103,28 @@ class ToastManager {
 // Add keyframe animations
 const style = document.createElement('style');
 style.textContent = `
-  @keyframes slideIn {
+  @keyframes toastFadeIn {
     from {
-      transform: translateX(100%);
       opacity: 0;
+      transform: translateY(-10px);
+      filter: blur(4px);
     }
     to {
-      transform: translateX(0);
       opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
     }
   }
-  @keyframes slideOut {
+  @keyframes toastFadeOut {
     from {
-      transform: translateX(0);
       opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
     }
     to {
-      transform: translateX(100%);
       opacity: 0;
+      transform: translateY(-10px);
+      filter: blur(4px);
     }
   }
 `;

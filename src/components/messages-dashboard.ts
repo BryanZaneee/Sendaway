@@ -197,12 +197,13 @@ class MessagesDashboard {
           width: 52px;
           height: 52px;
           border-radius: 50%;
-          background: var(--pastel-green);
-          border: 3px solid black;
+          background: linear-gradient(135deg, var(--pastel-green), rgba(194, 212, 188, 0.5));
+          border: none;
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
+          box-shadow: 0 2px 10px rgba(90, 80, 100, 0.08);
         }
         .dash-header-icon svg {
           width: 26px;
@@ -211,20 +212,22 @@ class MessagesDashboard {
         .dash-header-text h2 {
           margin: 0;
           font-size: 1.6rem;
+          font-style: italic;
         }
         .dash-header-text p {
           margin: 4px 0 0;
-          color: #555;
+          color: var(--text-muted, #8A8494);
           font-size: 0.9rem;
         }
         .dash-section-header {
           grid-column: 1 / -1;
-          font-size: 0.8rem;
-          font-weight: 800;
-          letter-spacing: 2px;
-          color: #555;
+          font-family: 'Caveat', cursive;
+          font-size: 1rem;
+          font-weight: 600;
+          letter-spacing: 1px;
+          color: var(--text-muted, #8A8494);
           padding: 8px 0 4px;
-          border-bottom: 2px solid #ddd;
+          border-bottom: 1px solid rgba(90, 80, 100, 0.1);
           margin-top: 8px;
         }
         .dash-grid {
@@ -240,8 +243,8 @@ class MessagesDashboard {
 
         /* Card styles */
         .msg-card {
-          border: 3px solid black;
-          border-radius: 14px;
+          border: 1px solid rgba(90, 80, 100, 0.15);
+          border-radius: 20px;
           padding: 24px 20px 20px;
           cursor: pointer;
           display: flex;
@@ -249,18 +252,19 @@ class MessagesDashboard {
           align-items: center;
           text-align: center;
           gap: 12px;
-          transition: transform 0.15s ease, box-shadow 0.15s ease;
-          box-shadow: 5px 5px 0px 0px black;
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+          box-shadow: 0 4px 20px rgba(90, 80, 100, 0.08);
+          backdrop-filter: blur(10px);
         }
         .msg-card:hover {
-          transform: translate(-2px, -2px);
-          box-shadow: 7px 7px 0px 0px black;
+          transform: translateY(-4px);
+          box-shadow: 0 8px 30px rgba(90, 80, 100, 0.12);
         }
-        .msg-card.unlocked { background: var(--pastel-purple); }
+        .msg-card.unlocked { background: linear-gradient(135deg, var(--pastel-purple), rgba(212, 199, 224, 0.4)); }
         .msg-card.locked {
-          background: var(--pastel-yellow);
+          background: linear-gradient(135deg, var(--pastel-yellow), rgba(232, 221, 181, 0.4));
         }
-        .msg-card.delivered { background: var(--pastel-green); }
+        .msg-card.delivered { background: linear-gradient(135deg, var(--pastel-green), rgba(194, 212, 188, 0.4)); }
 
         .card-icon-circle {
           width: 64px;
@@ -274,24 +278,26 @@ class MessagesDashboard {
           width: 30px;
           height: 30px;
         }
-        .msg-card.unlocked .card-icon-circle { background: rgba(139, 92, 246, 0.15); color: #7c3aed; }
+        .msg-card.unlocked .card-icon-circle { background: rgba(212, 199, 224, 0.3); color: #7c6a9e; }
         .msg-card.locked .card-icon-circle {
-          background: rgba(187, 247, 208, 0.5);
-          border: 3px solid black;
-          color: #333;
+          background: rgba(194, 212, 188, 0.4);
+          border: none;
+          color: var(--text-secondary, #5B5468);
         }
-        .msg-card.delivered .card-icon-circle { background: rgba(22, 163, 74, 0.15); color: #15803d; }
+        .msg-card.delivered .card-icon-circle { background: rgba(194, 212, 188, 0.4); color: #4a7a4e; }
 
         .card-status {
-          font-weight: 800;
+          font-family: 'Playfair Display', serif;
+          font-weight: 700;
           font-size: 1rem;
+          color: var(--text-primary, #1A1721);
         }
         .card-meta {
           display: flex;
           flex-direction: column;
           gap: 4px;
           font-size: 0.82rem;
-          color: #444;
+          color: var(--text-muted, #8A8494);
         }
         .card-meta-row {
           display: inline-flex;
@@ -307,20 +313,20 @@ class MessagesDashboard {
           align-items: center;
           gap: 5px;
           font-size: 0.78rem;
-          font-weight: 700;
-          color: #555;
-          background: rgba(0,0,0,0.06);
+          font-weight: 600;
+          color: var(--text-muted, #8A8494);
+          background: rgba(90, 80, 100, 0.06);
           border-radius: 20px;
           padding: 3px 10px;
         }
 
         /* Staggered entry animation */
-        @keyframes cardFadeIn {
-          from { opacity: 0; transform: translateY(16px); }
-          to { opacity: 1; transform: translateY(0); }
+        @keyframes dashCardBloom {
+          from { opacity: 0; transform: scale(0.96); filter: blur(4px); }
+          to { opacity: 1; transform: scale(1); filter: blur(0); }
         }
         .msg-card {
-          animation: cardFadeIn 0.35s ease both;
+          animation: dashCardBloom 0.5s ease both;
         }
         @media (prefers-reduced-motion: reduce) {
           .msg-card {
@@ -341,24 +347,26 @@ class MessagesDashboard {
           width: 72px;
           height: 72px;
           border-radius: 50%;
-          background: var(--pastel-blue);
-          border: 3px solid black;
+          background: linear-gradient(135deg, var(--pastel-blue), rgba(196, 215, 224, 0.4));
+          border: none;
           display: flex;
           align-items: center;
           justify-content: center;
+          box-shadow: 0 4px 20px rgba(90, 80, 100, 0.08);
         }
         .dash-empty-icon svg {
           width: 32px;
           height: 32px;
-          color: #333;
+          color: var(--text-secondary, #5B5468);
         }
         .dash-empty h3 {
           margin: 0;
           font-size: 1.3rem;
+          font-style: italic;
         }
         .dash-empty p {
           margin: 0;
-          color: #555;
+          color: var(--text-muted, #8A8494);
           max-width: 360px;
         }
       </style>

@@ -183,23 +183,23 @@ function updateAuthUI(isLoggedIn: boolean, isPro: boolean, displayName: string, 
 
     authBtn.innerHTML = `
       ${isPro ? `
-        <span style="background: var(--pastel-pink); border: 2px solid black; padding: 3px 8px; font-weight: 700; font-size: 0.8rem;">
-          PRO
+        <span style="background: linear-gradient(135deg, var(--pastel-pink), var(--pastel-purple)); border: none; padding: 3px 10px; font-family: 'Caveat', cursive; font-weight: 600; font-size: 0.9rem; border-radius: 20px; color: #1A1721;">
+          Pro
         </span>
       ` : ''}
       <div style="position: relative;">
-        <button id="userMenuBtn" style="background: none; border: 2px solid black; border-radius: 12px; font-family: inherit; font-weight: 700; cursor: pointer; padding: 6px 14px; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; transition: background 0.15s ease;">
+        <button id="userMenuBtn" style="background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(90, 80, 100, 0.15); border-radius: 50px; font-family: 'Lora', serif; font-weight: 600; cursor: pointer; padding: 6px 14px; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; transition: all 0.3s ease; backdrop-filter: blur(8px); color: #5B5468;">
           ${truncatedName}
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="2,4 6,8 10,4"></polyline>
           </svg>
         </button>
-        <div id="userDropdown" style="display: none; position: absolute; right: 0; top: calc(100% + 8px); min-width: 220px; background: white; border: 3px solid black; border-radius: 12px; box-shadow: 4px 4px 0px 0px black; z-index: 200; overflow: hidden;">
-          <div style="padding: 14px 16px; border-bottom: 2px solid #eee;">
-            <div style="font-weight: 700; font-size: 0.95rem; word-break: break-word;">${displayName}</div>
-            <div style="font-size: 0.8rem; color: #555; margin-top: 2px; word-break: break-all;">${email}</div>
+        <div id="userDropdown" style="display: none; position: absolute; right: 0; top: calc(100% + 8px); min-width: 220px; background: rgba(250, 246, 240, 0.95); border: 1px solid rgba(90, 80, 100, 0.15); border-radius: 16px; box-shadow: 0 8px 30px rgba(90, 80, 100, 0.12); backdrop-filter: blur(20px); z-index: 200; overflow: hidden;">
+          <div style="padding: 14px 16px; border-bottom: 1px solid rgba(90, 80, 100, 0.1);">
+            <div style="font-family: 'Playfair Display', serif; font-weight: 700; font-size: 0.95rem; word-break: break-word; color: #1A1721;">${displayName}</div>
+            <div style="font-size: 0.8rem; color: #8A8494; margin-top: 2px; word-break: break-all;">${email}</div>
           </div>
-          <button id="dropdownSignOutBtn" style="width: 100%; background: none; border: none; font-family: inherit; font-weight: 700; font-size: 0.9rem; cursor: pointer; padding: 12px 16px; text-align: left; transition: background 0.15s ease;">
+          <button id="dropdownSignOutBtn" style="width: 100%; background: none; border: none; font-family: 'Lora', serif; font-weight: 600; font-size: 0.9rem; cursor: pointer; padding: 12px 16px; text-align: left; transition: all 0.3s ease; color: #5B5468;">
             Sign Out
           </button>
         </div>
@@ -207,7 +207,7 @@ function updateAuthUI(isLoggedIn: boolean, isPro: boolean, displayName: string, 
     `;
   } else {
     authBtn.innerHTML = `
-      <button id="signInBtn" style="background: none; border: none; font-family: inherit; font-weight: 700; cursor: pointer; border-bottom: 2px solid black;">
+      <button id="signInBtn" style="background: none; border: none; font-family: 'Lora', serif; font-weight: 600; cursor: pointer; border-bottom: 1px solid var(--pastel-pink); color: #5B5468; transition: color 0.3s ease;">
         Sign In
       </button>
     `;
@@ -241,7 +241,7 @@ function updateAuthUI(isLoggedIn: boolean, isPro: boolean, displayName: string, 
 
   // Hover effect on sign out button
   dropdownSignOutBtn?.addEventListener('mouseenter', () => {
-    dropdownSignOutBtn.style.background = 'var(--pastel-pink)';
+    dropdownSignOutBtn.style.background = 'rgba(232, 196, 200, 0.3)';
   });
   dropdownSignOutBtn?.addEventListener('mouseleave', () => {
     dropdownSignOutBtn.style.background = 'none';

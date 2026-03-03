@@ -186,22 +186,31 @@ class MessageDetailModal {
         position: absolute;
         top: 20px;
         left: 20px;
-        background: white;
-        border: 2px solid black;
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(90, 80, 100, 0.15);
         border-radius: 50px;
         padding: 10px 20px;
-        font-family: inherit;
-        font-weight: 700;
+        font-family: 'Lora', serif;
+        font-weight: 600;
         cursor: pointer;
         display: flex;
         align-items: center;
         gap: 8px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 2px 10px rgba(90, 80, 100, 0.08);
+        color: #5B5468;
+        transition: all 0.3s ease;
+      }
+      .back-btn:hover {
+        background: rgba(255, 255, 255, 0.9);
+        color: #1A1721;
       }
       .detail-card {
-        background: white;
-        border: 4px solid black;
-        border-radius: 12px;
-        box-shadow: 10px 10px 0px 0px black;
+        background: rgba(250, 246, 240, 0.95);
+        border: 1px solid rgba(90, 80, 100, 0.15);
+        border-radius: 20px;
+        box-shadow: 0 12px 40px rgba(90, 80, 100, 0.12);
+        backdrop-filter: blur(20px);
         width: 100%;
         max-width: 600px;
         margin-top: 60px;
@@ -209,7 +218,7 @@ class MessageDetailModal {
       }
       .detail-header {
         padding: 25px;
-        border-bottom: 3px solid black;
+        border-bottom: 1px solid rgba(90, 80, 100, 0.1);
         display: flex;
         align-items: center;
         gap: 15px;
@@ -217,8 +226,8 @@ class MessageDetailModal {
       .header-icon {
         width: 50px;
         height: 50px;
-        background: white;
-        border: 2px solid black;
+        background: rgba(255, 255, 255, 0.6);
+        border: none;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -228,7 +237,7 @@ class MessageDetailModal {
       .header-icon svg {
         width: 24px;
         height: 24px;
-        color: #333;
+        color: #5B5468;
       }
       .meta-row {
         display: flex;
@@ -238,39 +247,42 @@ class MessageDetailModal {
         flex-wrap: wrap;
       }
       .meta-item {
-        background: #F5F5F5;
-        border: 2px solid black;
-        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(90, 80, 100, 0.1);
+        border-radius: 16px;
         padding: 15px 20px;
         text-align: center;
         flex: 1;
         min-width: 120px;
       }
       .meta-label {
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: #666;
+        font-family: 'Caveat', cursive;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #8A8494;
         margin-bottom: 5px;
       }
       .meta-value {
+        font-family: 'Playfair Display', serif;
         font-weight: 700;
+        color: #1A1721;
       }
       .delete-section {
         padding: 20px;
-        border-top: 2px solid #eee;
+        border-top: 1px solid rgba(90, 80, 100, 0.1);
         text-align: center;
       }
       .delete-btn {
         background: none;
         border: none;
-        color: #666;
-        font-family: inherit;
+        color: #8A8494;
+        font-family: 'Lora', serif;
         font-size: 0.9rem;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         gap: 5px;
+        transition: color 0.3s ease;
       }
       .delete-btn:hover {
         color: #dc2626;
@@ -312,23 +324,24 @@ class MessageDetailModal {
     const waitTime = this.getWaitTime();
     const isPending = this.message.status === 'pending';
 
-    this.overlay = this.createOverlayBase('#BAE6FD');
+    this.overlay = this.createOverlayBase('linear-gradient(180deg, rgba(196, 215, 224, 0.4), rgba(212, 199, 224, 0.3))');
     this.overlay.innerHTML = `
       <style>
         ${this.getSharedStyles()}
         .detail-header {
-          background: #FDE68A;
+          background: linear-gradient(135deg, var(--pastel-yellow, #E8DDB5), rgba(232, 221, 181, 0.5));
         }
         .countdown-section {
           padding: 30px;
           text-align: center;
         }
         .countdown-label {
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 2px;
+          font-family: 'Caveat', cursive;
+          font-weight: 600;
+          font-size: 1.1rem;
+          letter-spacing: 1px;
           margin-bottom: 20px;
-          color: #333;
+          color: #5B5468;
         }
         .countdown-boxes {
           display: flex;
@@ -339,27 +352,30 @@ class MessageDetailModal {
         .countdown-box {
           width: 100px;
           height: 100px;
-          border: 3px solid black;
-          border-radius: 12px;
+          border: 1px solid rgba(90, 80, 100, 0.1);
+          border-radius: 20px;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
+          box-shadow: 0 2px 12px rgba(90, 80, 100, 0.06);
         }
-        .countdown-box.pink { background: var(--pastel-pink); }
-        .countdown-box.peach { background: #FECACA; }
-        .countdown-box.yellow { background: var(--pastel-yellow); }
-        .countdown-box.green { background: var(--pastel-green); }
+        .countdown-box.pink { background: linear-gradient(135deg, var(--pastel-pink, #E8C4C8), rgba(232, 196, 200, 0.4)); }
+        .countdown-box.peach { background: linear-gradient(135deg, #e0c4c8, rgba(224, 196, 200, 0.4)); }
+        .countdown-box.yellow { background: linear-gradient(135deg, var(--pastel-yellow, #E8DDB5), rgba(232, 221, 181, 0.4)); }
+        .countdown-box.green { background: linear-gradient(135deg, var(--pastel-green, #C2D4BC), rgba(194, 212, 188, 0.4)); }
         .countdown-number {
+          font-family: 'Playfair Display', serif;
           font-size: 2.5rem;
           font-weight: 800;
           line-height: 1;
+          color: #1A1721;
         }
         .countdown-unit {
-          font-size: 0.75rem;
-          font-weight: 700;
-          text-transform: uppercase;
-          color: #555;
+          font-family: 'Caveat', cursive;
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: #8A8494;
           margin-top: 5px;
         }
       </style>
@@ -372,8 +388,8 @@ class MessageDetailModal {
         <div class="detail-header">
           <div class="header-icon">${ICON_LOCK}</div>
           <div>
-            <h2 style="margin: 0; font-size: 1.5rem;">Message Locked</h2>
-            <p style="margin: 5px 0 0 0; color: #555;">Patience. Good things are waiting.</p>
+            <h2 style="margin: 0; font-size: 1.5rem; font-style: italic;">Message Locked</h2>
+            <p style="margin: 5px 0 0 0; color: #8A8494;">Patience. Good things are waiting.</p>
           </div>
         </div>
 
@@ -465,53 +481,60 @@ class MessageDetailModal {
       }
     }
 
-    this.overlay = this.createOverlayBase('#BBF7D0');
+    this.overlay = this.createOverlayBase('linear-gradient(180deg, rgba(194, 212, 188, 0.3), rgba(232, 221, 181, 0.2))');
     this.overlay.innerHTML = `
       <style>
         ${this.getSharedStyles()}
         .detail-header {
-          background: var(--pastel-purple, #E0CFFC);
+          background: linear-gradient(135deg, var(--pastel-purple, #D4C7E0), rgba(212, 199, 224, 0.5));
         }
         .message-box {
           margin: 20px;
           padding: 24px;
-          background: var(--pastel-blue);
-          border: 3px solid black;
-          border-radius: 10px;
+          background: linear-gradient(135deg, rgba(196, 215, 224, 0.2), rgba(212, 199, 224, 0.15));
+          border: 1px solid rgba(90, 80, 100, 0.1);
+          border-radius: 16px;
           white-space: pre-wrap;
           line-height: 1.7;
           max-height: 350px;
           overflow-y: auto;
+          font-family: 'Lora', serif;
+          color: #1A1721;
         }
         .video-section {
           padding: 20px 25px;
-          border-top: 2px solid #eee;
+          border-top: 1px solid rgba(90, 80, 100, 0.1);
         }
         .video-player {
           width: 100%;
-          border-radius: 8px;
-          border: 2px solid black;
+          border-radius: 16px;
+          border: 1px solid rgba(90, 80, 100, 0.1);
         }
         .download-btn {
           display: inline-flex;
           align-items: center;
           gap: 8px;
           margin-top: 15px;
-          background: var(--pastel-blue);
-          border: 2px solid black;
-          border-radius: 8px;
+          background: linear-gradient(135deg, var(--pastel-blue, #C4D7E0), rgba(196, 215, 224, 0.5));
+          border: 1px solid rgba(90, 80, 100, 0.15);
+          border-radius: 50px;
           padding: 10px 20px;
-          font-family: inherit;
-          font-weight: 700;
+          font-family: 'Lora', serif;
+          font-weight: 600;
           cursor: pointer;
           text-decoration: none;
-          color: black;
+          color: #1A1721;
+          transition: all 0.3s ease;
+        }
+        .download-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 15px rgba(90, 80, 100, 0.1);
         }
         .video-error {
           padding: 20px;
-          background: #FEE2E2;
-          border: 2px solid black;
-          border-radius: 8px;
+          background: linear-gradient(135deg, rgba(232, 196, 200, 0.3), rgba(232, 196, 200, 0.15));
+          border: 1px solid rgba(90, 80, 100, 0.1);
+          border-radius: 16px;
           text-align: center;
           color: #991B1B;
         }
@@ -525,8 +548,8 @@ class MessageDetailModal {
         <div class="detail-header">
           <div class="header-icon">${ICON_MAIL}</div>
           <div>
-            <h2 style="margin: 0; font-size: 1.5rem;">Message Delivered</h2>
-            <p style="margin: 5px 0 0 0; color: #555;">A note from your past self</p>
+            <h2 style="margin: 0; font-size: 1.5rem; font-style: italic;">Message Delivered</h2>
+            <p style="margin: 5px 0 0 0; color: #8A8494;">A note from your past self</p>
           </div>
         </div>
 
