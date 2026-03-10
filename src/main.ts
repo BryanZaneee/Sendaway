@@ -340,7 +340,6 @@ function updateAuthUI(isLoggedIn: boolean, isPro: boolean, displayName: string, 
   dropdownSignOutBtn?.addEventListener('click', async () => {
     const { authService } = await import('./services/auth.service');
     const { toast } = await import('./components/toast');
-    window.google?.accounts?.id?.disableAutoSelect();
     await authService.signOut();
     toast.info('Signed out');
   });

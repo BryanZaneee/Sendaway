@@ -235,12 +235,16 @@ class AuthService {
   }
 
   /**
-   * Sign in with Google using an ID token from Google Identity Services
+   * Sign in with Google via Supabase OAuth redirect flow.
+   * Uses full-page redirect (not popup) to avoid COOP/postMessage issues
+   * and Safari ITP cookie blocking.
    */
-  async signInWithGoogleIdToken(idToken: string): Promise<AuthResult> {
-    const { error } = await supabase.auth.signInWithIdToken({
+  async signInWithGoogle(): Promise<AuthResult> {
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      token: idToken,
+      options: {
+        redirectTo: window.location.origin,
+      },
     });
 
     if (error) {
