@@ -133,6 +133,7 @@ RPC: `update_storage_used(user_id, delta_bytes)` - atomic storage quota updates.
 7. **Video ownership**: All operations verify path starts with `user.id`.
 8. **Message deletion**: Only pending messages can be deleted (RLS enforced).
 9. **Admin operations**: Edge Functions use service role client to bypass RLS.
+10. **Safari ITP compatibility**: Any OAuth/Google Identity Services initialization must set `itp_support: true`. Safari's Intelligent Tracking Prevention blocks third-party cookies used for OAuth state, causing `state_mismatch` errors without it.
 
 ## External Service Failure Modes
 

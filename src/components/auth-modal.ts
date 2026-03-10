@@ -164,10 +164,15 @@ class AuthModal {
     });
 
     // Google Identity Services
+    // IMPORTANT: itp_support must be true. Safari's Intelligent Tracking Prevention
+    // blocks third-party cookies used by GIS to store OAuth state. Without it, Safari
+    // users get a "state_mismatch" error on sign-in. This applies to any OAuth/GIS
+    // initialization — always enable ITP support.
     const googleContainer = document.getElementById('googleSignInContainer');
     if (googleContainer && window.google?.accounts?.id) {
       google.accounts.id.initialize({
         client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+        itp_support: true,
         callback: async (response: google.accounts.id.CredentialResponse) => {
           const result = await authService.signInWithGoogleIdToken(response.credential);
           if (result.error) {
