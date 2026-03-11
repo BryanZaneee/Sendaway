@@ -1,9 +1,17 @@
-import { supabase } from '../config/supabase';
+import { authClient } from '../config/auth';
+import { supabase, setSupabaseAccessToken } from '../config/supabase';
 import type { Profile } from '../types/database';
-import type { User } from '@supabase/supabase-js';
+
+
+
+export interface FtrMsgUser {
+  id: string;    // Supabase UUID (from bridge)
+  email: string;
+  name: string;
+}
 
 export interface AuthState {
-  user: User | null;
+  user: FtrMsgUser | null;
   profile: Profile | null;
 }
 
@@ -15,42 +23,101 @@ export interface SignUpResult extends AuthResult {
   requiresEmailVerification: boolean;
 }
 
+interface BridgeTokenResponse {
+  token: string;
+  supabaseUserId: string;
+}
+
 class AuthService {
-  private currentUser: User | null = null;
+  private currentUser: FtrMsgUser | null = null;
   private currentProfile: Profile | null = null;
   private listeners: ((state: AuthState) => void)[] = [];
+  private tokenExpiry: number = 0;
 
   constructor() {
-    // Listen for auth state changes
-    supabase.auth.onAuthStateChange(async (_event, session) => {
-      this.currentUser = session?.user ?? null;
-
-      if (this.currentUser) {
-        await this.fetchProfile();
-      } else {
-        this.currentProfile = null;
-      }
-
-      this.notifyListeners();
-    });
-
-    // Initialize on load
     this.initialize();
   }
 
   private async initialize() {
-    const { data: { session } } = await supabase.auth.getSession();
-    this.currentUser = session?.user ?? null;
+    try {
+      const { data } = await authClient.getSession();
+      if (data?.user) {
+        const bridgeData = await this.fetchBridgeToken();
+        if (bridgeData) {
+          this.currentUser = {
+            id: bridgeData.supabaseUserId,
+            email: data.user.email,
+            name: data.user.name || data.user.email,
+          };
+          setSupabaseAccessToken(bridgeData.token);
+          await this.fetchProfile();
+        }
+      }
 
-    if (this.currentUser) {
-      await this.fetchProfile();
+      // Handle password reset callback
+      await this.handlePasswordResetCallback();
+    } catch (err) {
+      console.warn('Auth initialization failed:', err);
     }
 
     this.notifyListeners();
   }
 
+  private async handlePasswordResetCallback() {
+    const url = new URL(window.location.href);
+    if (url.pathname === '/reset-password' && url.searchParams.has('token')) {
+      const token = url.searchParams.get('token')!;
+      const newPassword = prompt('Enter your new password (minimum 8 characters):');
+      if (newPassword && newPassword.length >= 8) {
+        const { error } = await authClient.resetPassword({
+          newPassword,
+          token,
+        });
+        if (error) {
+          console.error('Password reset failed:', error.message);
+        } else {
+          window.history.replaceState({}, document.title, '/');
+        }
+      }
+    }
+  }
+
+  private async fetchBridgeToken(): Promise<BridgeTokenResponse | null> {
+    try {
+      const res = await fetch('/api/bridge/supabase-token', {
+        credentials: 'include',
+      });
+
+      if (!res.ok) {
+        console.error('Bridge token fetch failed:', res.status);
+        return null;
+      }
+
+      const data = await res.json();
+      this.tokenExpiry = Date.now() + 50 * 60 * 1000; // 50 min (bridge JWT has 1hr TTL)
+      return data;
+    } catch (err) {
+      console.error('Bridge token fetch error:', err);
+      return null;
+    }
+  }
+
+  private async ensureFreshToken(): Promise<void> {
+    if (!this.currentUser) return;
+
+    // Refresh if within 10 minutes of expiry
+    if (Date.now() > this.tokenExpiry - 10 * 60 * 1000) {
+      const bridgeData = await this.fetchBridgeToken();
+      if (bridgeData) {
+        setSupabaseAccessToken(bridgeData.token);
+      }
+    }
+  }
+
   private async fetchProfile() {
     if (!this.currentUser) return;
+
+    await this.ensureFreshToken();
 
     const { data, error } = await supabase
       .from('profiles')
@@ -63,16 +130,14 @@ class AuthService {
       return;
     }
 
-    // Profile missing — create it via RPC (handles OAuth identity linking,
-    // missing trigger, or trigger failure)
+    // Profile missing — create via RPC
     console.warn('Profile not found, creating via RPC...', error?.message);
-    const email = this.currentUser.email ?? this.currentUser.user_metadata?.email ?? '';
+    const email = this.currentUser.email;
     await supabase.rpc('ensure_profile_exists', {
       p_user_id: this.currentUser.id,
       p_email: email,
     });
 
-    // Fetch the newly created profile
     const { data: newProfile, error: retryError } = await supabase
       .from('profiles')
       .select('*')
@@ -91,24 +156,14 @@ class AuthService {
     this.listeners.forEach(listener => listener(state));
   }
 
-  /**
-   * Subscribe to auth state changes
-   */
   onAuthStateChange(callback: (state: AuthState) => void): () => void {
     this.listeners.push(callback);
-
-    // Immediately call with current state
     callback(this.getState());
-
-    // Return unsubscribe function
     return () => {
       this.listeners = this.listeners.filter(l => l !== callback);
     };
   }
 
-  /**
-   * Get current auth state
-   */
   getState(): AuthState {
     return {
       user: this.currentUser,
@@ -116,144 +171,118 @@ class AuthService {
     };
   }
 
-  /**
-   * Get current user
-   */
-  getUser(): User | null {
+  getUser(): FtrMsgUser | null {
     return this.currentUser;
   }
 
-  /**
-   * Get current profile
-   */
   getProfile(): Profile | null {
     return this.currentProfile;
   }
 
-  /**
-   * Check if user is logged in
-   */
   isLoggedIn(): boolean {
     return this.currentUser !== null;
   }
 
-  /**
-   * Check if user is pro tier
-   */
   isPro(): boolean {
     return this.currentProfile?.tier === 'pro';
   }
 
-  /**
-   * Check if free message has been used
-   */
   hasFreeMessageUsed(): boolean {
     return this.currentProfile?.free_message_used ?? false;
   }
 
-  /**
-   * Get remaining storage in bytes
-   */
   getRemainingStorage(): number {
     if (!this.currentProfile) return 0;
     return this.currentProfile.storage_limit_bytes - this.currentProfile.storage_used_bytes;
   }
 
-  /**
-   * Sign up with email and password
-   */
   async signUp(email: string, password: string): Promise<SignUpResult> {
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await authClient.signUp.email({
       email,
       password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`
-      }
+      name: email.split('@')[0],
     });
 
     if (error) {
-      return { error: error.message, requiresEmailVerification: false };
+      return { error: error.message || String(error), requiresEmailVerification: false };
     }
 
-    return {
-      error: null,
-      requiresEmailVerification: data.session === null
-    };
+    return { error: null, requiresEmailVerification: true };
   }
 
-  /**
-   * Sign in with email and password
-   */
   async signIn(email: string, password: string): Promise<AuthResult> {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await authClient.signIn.email({
       email,
-      password
+      password,
     });
 
     if (error) {
-      const isUnconfirmedEmail = /email.*not.*confirm/i.test(error.message);
-      if (isUnconfirmedEmail) {
+      const msg = error.message || String(error);
+      const isUnverified = /verif/i.test(msg) || /confirm/i.test(msg);
+      if (isUnverified) {
         return {
-          error: 'Please confirm your email before signing in. Check your inbox for the confirmation link.'
+          error: 'Please verify your email before signing in. Check your inbox for the verification link.',
         };
       }
+      return { error: msg };
+    }
 
-      return { error: error.message };
+    if (data?.user) {
+      const bridgeData = await this.fetchBridgeToken();
+      if (bridgeData) {
+        this.currentUser = {
+          id: bridgeData.supabaseUserId,
+          email: data.user.email,
+          name: data.user.name || data.user.email,
+        };
+        setSupabaseAccessToken(bridgeData.token);
+        await this.fetchProfile();
+        this.notifyListeners();
+      }
     }
 
     return { error: null };
   }
 
-  /**
-   * Sign out
-   */
   async signOut(): Promise<void> {
-    await supabase.auth.signOut();
+    await authClient.signOut();
+    setSupabaseAccessToken(null);
+    this.currentUser = null;
+    this.currentProfile = null;
+    this.tokenExpiry = 0;
+    this.notifyListeners();
   }
 
-  /**
-   * Send password reset email
-   */
   async resetPassword(email: string): Promise<AuthResult> {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`
+    const { error } = await authClient.requestPasswordReset({
+      email,
+      redirectTo: `${window.location.origin}/reset-password`,
     });
 
     if (error) {
-      return { error: error.message };
+      return { error: error.message || String(error) };
     }
 
     return { error: null };
   }
 
-  /**
-   * Refresh profile data from database
-   */
+  async signInWithGoogle(): Promise<AuthResult> {
+    const { error } = await authClient.signIn.social({
+      provider: 'google-ftrmsg',
+      callbackURL: window.location.origin,
+    });
+
+    if (error) {
+      return { error: error.message || String(error) };
+    }
+
+    return { error: null };
+  }
+
   async refreshProfile(): Promise<void> {
     await this.fetchProfile();
     this.notifyListeners();
   }
-
-  /**
-   * Sign in with Google via Supabase OAuth redirect flow.
-   * Uses full-page redirect (not popup) to avoid COOP/postMessage issues
-   * and Safari ITP cookie blocking.
-   */
-  async signInWithGoogle(): Promise<AuthResult> {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin,
-      },
-    });
-
-    if (error) {
-      return { error: error.message };
-    }
-
-    return { error: null };
-  }
 }
 
-// Export singleton instance
 export const authService = new AuthService();
