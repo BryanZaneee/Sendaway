@@ -22,12 +22,4 @@ if (!supabaseAnonKey.startsWith('eyJ')) {
   throw new Error('Invalid VITE_SUPABASE_ANON_KEY: expected JWT-like value');
 }
 
-let currentAccessToken: string | null = null;
-
-export function setSupabaseAccessToken(token: string | null): void {
-  currentAccessToken = token;
-}
-
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  accessToken: async () => currentAccessToken,
-});
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);

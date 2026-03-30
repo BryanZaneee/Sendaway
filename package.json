@@ -15,8 +15,7 @@
     "deploy": "tsc && vite build"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0",
-    "better-auth": "^1.5.2"
+    "@supabase/supabase-js": "^2.39.0"
   },
   "devDependencies": {
     "@types/jsdom": "^27.0.0",

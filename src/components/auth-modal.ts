@@ -83,7 +83,7 @@ class AuthModal {
           ${this.mode !== 'reset' ? `
             <div class="form-group">
               <label>Password</label>
-              <input type="password" id="authPassword" required placeholder="Your password" minlength="8">
+              <input type="password" id="authPassword" required placeholder="Your password" minlength="6">
             </div>
           ` : ''}
 

@@ -56,7 +56,7 @@ async function initServices(): Promise<void> {
     authService.onAuthStateChange((state) => {
       const user = state.user;
       const displayName = user
-        ? user.name || user.email || 'Account'
+        ? user.user_metadata?.full_name || user.user_metadata?.name || user.email || 'Account'
         : '';
       const email = user?.email || '';
       updateAuthUI(user !== null, state.profile?.tier === 'pro', displayName, email);

@@ -10,7 +10,6 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks: {
           'supabase': ['@supabase/supabase-js'],
-          'better-auth': ['better-auth'],
         }
       }
     }
