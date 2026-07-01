@@ -8,8 +8,9 @@ export default defineConfig(({ mode }) => ({
     target: 'ES2020',
     rollupOptions: {
       output: {
-        manualChunks: {
-          'supabase': ['@supabase/supabase-js'],
+        // vite 8 (rolldown) requires the function form, not the object shorthand
+        manualChunks(id) {
+          if (id.includes('@supabase/supabase-js')) return 'supabase';
         }
       }
     }
