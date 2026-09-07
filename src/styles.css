@@ -280,6 +280,8 @@ footer { background: rgba(255, 255, 255, 0.6); border-top: 1px solid var(--line)
 .foot p { margin: 0; font-size: 0.85rem; color: var(--ink-3); }
 .foot a { color: var(--ink); font-weight: 600; text-decoration: none; border-bottom: 1px solid transparent; }
 .foot a:hover { border-bottom-color: var(--pink); }
+.foot .credit { font-size: 0.8rem; }
+.foot .heart { color: #d48a95; }
 
 /* ---- toast ---- */
 #toasts { position: fixed; top: 20px; right: 20px; z-index: 1000; display: grid; gap: 10px; max-width: 380px; }
