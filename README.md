@@ -1,142 +1,64 @@
-# FtrMsg
+# FTRMSG
 
-Time-locked message delivery platform. Users compose messages (text + optional video) with a future delivery date. Messages are locked until their scheduled date, then delivered via email with access to unlocked content.
+Write to your future self. Open it when it's time.
 
-## Architecture
+A free time capsule that lives entirely in the browser. Write a note, pick a
+date, and it stays sealed until that day. No accounts, no servers, no payments.
 
-FtrMsg is a single-page application (Vite + Vanilla TypeScript) backed by Supabase (PostgreSQL + Auth + Storage + Edge Functions).
+Live at [ftrmsg.com](https://www.ftrmsg.com).
+
+## How it works
+
+- **Vault.** Sealed messages are stored in `localStorage` under `ftrmsg.vault`.
+  The page groups them into "still sealed" (live countdown, text hidden) and
+  "ready to open".
+- **Share link.** Every sealed message also becomes a link:
+  `https://www.ftrmsg.com/#m=<base64url JSON>`. The whole message travels in
+  the URL fragment, so it never hits a server and survives a browser cleanup.
+  Opening the link shows a countdown until the date, then the letter, with a
+  "save to my vault" button.
+- **Reminder.** The sealed panel offers an `.ics` file for the unlock day.
+
+### Honest limits
+
+- The lock is a promise, not encryption. Anyone with the link and developer
+  tools can decode it early. The FAQ on the page says so.
+- Clearing site data deletes the vault on that browser. The link is the backup.
+- The unlock moment is local midnight on the chosen date, on the reader's clock.
+
+## Development
+
+```bash
+npm install
+npm run dev        # http://localhost:3000
+npm test           # vitest, src/vault.test.ts
+npm run typecheck
+npm run build      # tsc + vite build → dist/
+```
+
+Zero runtime dependencies. Vite + TypeScript for the build, Vitest for tests.
+
+## Layout
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    FRONTEND (Vite + TS)                     │
-│  Components: Modals, forms, dashboard                       │
-│  Services: Auth, messages, payments, video (singletons)     │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│              SUPABASE (Backend as a Service)                │
-│  Database: Messages, profiles, payments, delivery_logs,      │
-│            notification_queue                                │
-│  Auth: Email/password authentication                        │
-│  Storage: Video files in 'message-videos' bucket            │
-│  Edge Functions: Stripe checkout, webhooks, scheduled notif. │
-│                 and message delivery                         │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   EXTERNAL SERVICES                         │
-│  Stripe: Payment processing ($9 Pro upgrade)                │
-│  Resend: Transactional email delivery                       │
-│  cron-job.org: Triggers confirmations + daily delivery       │
-└─────────────────────────────────────────────────────────────┘
+index.html        the single page, markup only
+src/styles.css    watercolor styles
+src/main.ts       DOM wiring: form, vault list, share link, countdowns, toasts
+src/vault.ts      pure logic: dates, validation, link encode/decode, storage, ics
+src/vault.test.ts
+vercel.json       www redirect + security headers (CSP: self + Google Fonts)
 ```
 
-## Key Design Decisions
+## Deploy
 
-### Tier System
-- **Free tier**: 1 message (no video), enforced via optimistic locking on `profiles.free_message_used`
-- **Pro tier**: Unlimited messages, 2GB video storage, $9 one-time payment
-- Optimistic locking prevents race condition: `UPDATE profiles SET free_message_used = true WHERE id = ? AND free_message_used = false RETURNING *`. If 0 rows updated, another request won the race.
+Vercel, static. Push to `main`.
 
-### Message Locking Mechanism
-- **Locked state**: Current date < scheduled_date. Frontend shows countdown timer (client-side, updates every 1 second).
-- **Unlocked state**: Current date >= scheduled_date. Frontend generates signed URL (7-day expiry) for video viewing.
-- Clock drift acceptable: Countdown is UX enhancement, not security boundary. Server-side delivery is authoritative.
+## Contributing
 
-### Compensating Transactions
-Supabase doesn't support multi-resource transactions (DB + Storage). Manual compensation required:
+See [CONTRIBUTING.md](CONTRIBUTING.md) for branches, commits, and the PR
+process. Run `npm test && npm run typecheck` before opening a PR. Never commit
+`.env*` files.
 
-1. **Free message race condition**: If optimistic lock fails after message insertion, delete the just-created message.
-2. **Storage quota failure**: If `update_storage_used` RPC fails after video upload, delete uploaded video via storage API + delete message record. Structured log on double-failure: `{event: 'COMPENSATING_DELETE_FAILED', message_id, video_storage_path, storage_error, delete_error}`
+## License
 
-### Scheduled Notification + Delivery Batches
-- Process-notifications Edge Function runs every 5 minutes for queued scheduled confirmations
-- Notification retries use exponential backoff up to 5 attempts
-- Process-delivery Edge Function triggered daily at 8 AM UTC by cron-job.org
-- Delivery retries continue while `messages.status='pending'` until 5 attempts; permanent failure marks status='failed'
-- Batch size: 30 messages per run (respects 60s Edge Function timeout: 45s execution + 15s buffer to prevent hard kill)
-- Batch lock (`delivery_batch_locks` table) prevents concurrent execution
-- Sequential email sending with 1000ms delay (respects Resend 1/second rate limit)
-- Unprocessed messages picked up by next cron run or manual trigger
-
-### Video Storage Strategy
-- Path structure: `{user_id}/{uuid}.{ext}` (user isolation + collision prevention)
-- Signed URLs cached in modal instance (7-day expiry, regenerated if expired)
-- Ownership validation: All video operations verify path starts with `{user.id}/`
-- Deletion cascades: Canceling a message deletes video from storage + updates quota
-
-### Delivery Idempotency
-- `delivery_logs` is source of truth for delivery status
-- Before sending email, check if `delivery_logs` has `status='delivered'` for this `message_id`
-- `messages.status` is derived state (updated after successful delivery)
-- Prevents duplicate emails on cron retry or manual trigger
-
-### Scheduled Confirmation Reliability
-- `notification_queue` stores scheduled-confirmation send attempts and state
-- `messages` insert trigger enqueues one confirmation for the account owner email
-- Unique constraint `(message_id, notification_type, recipient_email)` prevents duplicates
-
-### Webhook Idempotency
-- Stripe sends duplicate webhooks on network retry
-- Query `payments` table WHERE `checkout_session_id=?` without status filter
-- Handles both duplicate webhooks AND interrupted transactions (webhook arrives, DB update fails)
-
-## System Invariants
-
-1. **Free message enforcement**: Optimistic locking prevents race conditions. Rollback on conflict.
-2. **Storage quota accuracy**: Compensating transaction on RPC failure prevents quota drift.
-3. **Delivery idempotency**: Check delivery_logs before sending email. Never send twice.
-4. **Webhook idempotency**: Query by checkout_session_id without status filter.
-5. **Batch delivery lock**: Only one process-delivery execution at a time (delivery_batch_locks).
-6. **Scheduled confirmation retries**: notification_queue retries up to max attempts before marking failed.
-7. **Video ownership**: All operations verify path starts with user.id.
-8. **Message deletion**: Only pending messages can be deleted (RLS enforced).
-9. **Admin operations**: Edge Functions use service role client from _shared/supabase-admin.ts to bypass RLS.
-
-## Tradeoffs
-
-| Decision | Chosen Approach | Alternative | Reasoning |
-|----------|-----------------|-------------|-----------|
-| Tier enforcement | Optimistic locking + compensating transaction | Database constraint | Better error messages, allows compensation for message insertion |
-| Message locking | Client-side countdown | Server-side polling | Reduces server load, acceptable clock drift for UX |
-| Batch delivery | Daily at 8 AM UTC | Per-message scheduling | Simpler cron setup, acceptable delay for use case |
-| Video storage | Supabase Storage + signed URLs | CDN | Simpler architecture, integrated with Supabase auth |
-| Transaction safety | Manual compensating transactions | Distributed transaction coordinator | Supabase limitations, manual approach sufficient for scale |
-| Delivery logs | Separate table from messages | Status column only | Audit trail, delivery idempotency, supports retry logic |
-| Singleton services | Global instances | Dependency injection | Simpler for small app, acceptable coupling |
-| Neo-brutalist design | Bold borders, high contrast | Subtle gradients | Distinct visual identity, accessibility |
-
-## Development Workflow
-
-1. **Local development**: Vite dev server + Supabase local project
-2. **Database migrations**: `supabase migration new <name>` → `supabase db push`
-3. **Edge Function deployment**: `supabase functions deploy <name>`
-4. **Environment secrets**: `supabase secrets set <key>=<value>`
-5. **Type generation**: `supabase gen types typescript --local > src/types/database.ts`
-
-## External Dependencies
-
-| Service | Purpose | Failure Mode |
-|---------|---------|--------------|
-| Stripe | Payment processing | Users cannot upgrade to Pro until service recovers |
-| Resend | Email delivery | Messages remain pending, retried on next cron run |
-| cron-job.org | Scheduled confirmation + delivery triggers | Manual trigger via Edge Function URL |
-| Supabase | Database, auth, storage, functions | Full outage, no fallback |
-
-## Scaling Considerations
-
-- **Free tier Resend**: 100 emails/day limit. Upgrade to paid plan as user base grows.
-- **Batch size**: Current 30 messages/run. Monitor Edge Function execution time, adjust if needed.
-- **Storage quota**: Pro users limited to 2GB. Consider paid tier or external CDN for expansion.
-- **Database**: Supabase free tier sufficient for MVP. Monitor connection pool and query performance.
-- **Clock drift**: Client-side countdown acceptable for current scale. Server-side polling if precision becomes critical.
-
-## Security Boundaries
-
-- **RLS policies**: Enforce user isolation for messages, profiles, payments
-- **Cron authentication**: x-cron-secret header verified before execution
-- **Stripe webhook signature**: Verified before processing payment events
-- **Video ownership**: Path prefix validation prevents cross-user access
-- **Admin client**: Used only in Edge Functions (server-side), never exposed to client
+[MIT](LICENSE)
